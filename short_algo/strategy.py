@@ -13,6 +13,7 @@ from .config import (
     TP2_R,
     WATCH_SCORE,
 )
+from .models import classify_short_model
 from .indicators import (
     atr,
     bearish_rejection,
@@ -471,7 +472,7 @@ def analyze_short(symbol, frames, ticker, fast_row=None):
     if chase_penalty < 0:
         reasons.append("short-chase penalty active")
 
-    return {
+    result = {
         "symbol": symbol,
         "direction": "SHORT",
         "status": status,
@@ -512,3 +513,12 @@ def analyze_short(symbol, frames, ticker, fast_row=None):
             "risk_ok": risk_ok,
         },
     }
+
+    # V2 model label uses only information available at the signal timestamp.
+    result.update(
+        classify_short_model(
+            result,
+            return_24h_pct=return_pct(one["close"], 24),
+        )
+    )
+    return result
