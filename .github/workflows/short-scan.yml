@@ -38,8 +38,8 @@ jobs:
 
       - name: Run short market scan and Telegram notify
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SHORT_TELEGRAM_BOT_TOKEN: ${{ secrets.SHORT_TELEGRAM_BOT_TOKEN }}
+          SHORT_TELEGRAM_CHAT_ID: ${{ secrets.SHORT_TELEGRAM_CHAT_ID }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         run: python -m short_algo.main
 
