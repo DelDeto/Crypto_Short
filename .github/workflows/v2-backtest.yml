@@ -22,7 +22,9 @@ on:
       - "short_algo/calibration_v2.py"
       - "short_algo/models.py"
       - "short_algo/v2_main.py"
+      - "short_algo/v2_merge.py"
       - "short_algo/mexc.py"
+      - "short_algo/config.py"
       - ".github/workflows/v2-backtest.yml"
 
 permissions:
@@ -34,12 +36,20 @@ concurrency:
 
 jobs:
   backtest:
+    name: backtest-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     env:
+      PYTHONUNBUFFERED: "1"
       BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '14' }}
       BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '8' }}
       BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "4"
 
     steps:
       - name: Checkout
@@ -56,18 +66,60 @@ jobs:
       - name: Compile V2
         run: python -m compileall -q short_algo
 
-      - name: Run V2 historical replay
+      - name: Run V2 historical replay shard
         run: python -m short_algo.v2_main
 
-      - name: Upload V2 research outputs
+      - name: Upload shard research outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V2-Backtest
+          name: Crypto-Short-V2-Shard-${{ matrix.shard }}
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
             output/v2_calibration.json
             output/v2_summary.md
           if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v2-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download all shard outputs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V2-Shard-*
+          path: shard_outputs
+
+      - name: Merge and recalculate V2 metrics
+        run: python -m short_algo.v2_merge shard_outputs
+
+      - name: Publish summary
+        run: cat output/v2_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload final V2 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V2-Backtest-Final
+          path: |
+            output/v2_backtest.json
+            output/v2_trades.csv
+            output/v2_calibration.json
+            output/v2_summary.md
+          if-no-files-found: error
           retention-days: 30
