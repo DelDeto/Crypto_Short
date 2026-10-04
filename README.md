@@ -128,3 +128,32 @@ Each shard uploads an intermediate artifact. The merged result is published as:
 `Crypto-Short-V2-Backtest-Final`
 
 The merge step requires all expected shard indexes, so an incomplete run cannot silently produce a misleading "final" report.
+
+
+## V2.1 — Model-specific execution
+
+V2.1 is a research upgrade based on the 90-day V2 findings. It does not
+automatically replace the live V1 Telegram gate.
+
+### What changed
+
+- **Liquidity Reversal gets its own ENTRY_READY gate.** It no longer requires a
+  fully bearish 4H+1H regime. It requires a buy-side sweep, positive 24h context,
+  reversal confirmation, acceptable location, volatility and risk.
+- **Trend Continuation and Supply Fade are research-only WATCH setups** until
+  they show positive out-of-sample expectancy.
+- **Complete forward horizon:** signals inside the final outcome horizon are
+  excluded, so every tested signal has the full future window available.
+- **Terminal exit:** if neither +2R nor -1R is hit, the position closes at the
+  final horizon close rather than being discarded as unresolved.
+- **Execution costs:** configurable round-trip fee and slippage assumptions are
+  deducted from realized R.
+- **Baseline challenge:** a simple Bollinger failed-extension mean-reversion
+  Short runs beside the complex logic. The complex model should outperform this
+  baseline before promotion.
+- Reports compare **V1 ENTRY_READY**, **V2.1 ENTRY_READY**, all Liquidity
+  Reversals, top-gainer Liquidity Reversals and the Bollinger baseline.
+
+Default research cost assumptions are 8 bps round-trip fees plus 6 bps
+round-trip slippage. They are configurable workflow inputs and are not claims
+about any specific exchange fee tier.
