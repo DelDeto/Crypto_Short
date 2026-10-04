@@ -14,8 +14,12 @@ from .config import (
     BACKTEST_WARMUP_DAYS,
     BACKTEST_SHARD_INDEX,
     BACKTEST_SHARD_COUNT,
+    BACKTEST_FEE_BPS_ROUND_TRIP,
+    BACKTEST_SLIPPAGE_BPS_ROUND_TRIP,
 )
 from .indicators import return_pct
+from .baselines import bollinger_reversal_short
+from .v21 import classify_v21_status
 from .mexc import fetch_backtest_frames, get_all_tickers, get_contract_universe
 from .models import classify_short_model
 from .strategy import analyze_short
@@ -98,7 +102,9 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
     if risk <= 0:
         return {
             "outcome": "INVALID_RISK",
-            "realized_r": 0.0,
+            "realized_r": None,
+            "gross_r": None,
+            "cost_r": None,
             "mae_r": None,
             "mfe_r": None,
             "bars_to_outcome": None,
@@ -107,7 +113,14 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
             "runner_touched": False,
         }
 
-    future = future.head(max(1, int(horizon_hours)))
+    horizon = max(1, int(horizon_hours))
+    future = future.head(horizon)
+    total_cost_bps = (
+        float(BACKTEST_FEE_BPS_ROUND_TRIP)
+        + float(BACKTEST_SLIPPAGE_BPS_ROUND_TRIP)
+    )
+    cost_r = (float(entry) * total_cost_bps / 10000.0) / risk
+
     max_adverse = 0.0
     max_favorable = 0.0
     tp2_touched = False
@@ -126,11 +139,12 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
         hit_tp1 = low <= float(tp1)
 
         if hit_sl and hit_tp1:
-            # Intrabar ordering is unknowable from OHLC. Conservative rule:
-            # count the setup as a loss instead of assuming TP was first.
+            gross_r = -1.0
             return {
                 "outcome": "LOSS",
-                "realized_r": -1.0,
+                "realized_r": round(gross_r - cost_r, 4),
+                "gross_r": gross_r,
+                "cost_r": round(cost_r, 4),
                 "mae_r": round(max_adverse, 4),
                 "mfe_r": round(max_favorable, 4),
                 "bars_to_outcome": bars,
@@ -139,9 +153,12 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
                 "runner_touched": runner_touched,
             }
         if hit_sl:
+            gross_r = -1.0
             return {
                 "outcome": "LOSS",
-                "realized_r": -1.0,
+                "realized_r": round(gross_r - cost_r, 4),
+                "gross_r": gross_r,
+                "cost_r": round(cost_r, 4),
                 "mae_r": round(max_adverse, 4),
                 "mfe_r": round(max_favorable, 4),
                 "bars_to_outcome": bars,
@@ -150,9 +167,12 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
                 "runner_touched": runner_touched,
             }
         if hit_tp1:
+            gross_r = 2.0
             return {
                 "outcome": "WIN",
-                "realized_r": 2.0,
+                "realized_r": round(gross_r - cost_r, 4),
+                "gross_r": gross_r,
+                "cost_r": round(cost_r, 4),
                 "mae_r": round(max_adverse, 4),
                 "mfe_r": round(max_favorable, 4),
                 "bars_to_outcome": bars,
@@ -161,9 +181,29 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
                 "runner_touched": runner_touched,
             }
 
+    if future.empty:
+        return {
+            "outcome": "UNRESOLVED",
+            "realized_r": None,
+            "gross_r": None,
+            "cost_r": round(cost_r, 4),
+            "mae_r": None,
+            "mfe_r": None,
+            "bars_to_outcome": 0,
+            "ambiguous_same_bar": False,
+            "tp2_touched": False,
+            "runner_touched": False,
+        }
+
+    terminal_close = float(future["close"].iloc[-1])
+    gross_r = (float(entry) - terminal_close) / risk
+    net_r = gross_r - cost_r
     return {
-        "outcome": "UNRESOLVED",
-        "realized_r": 0.0,
+        "outcome": "TIME_EXIT_WIN" if net_r > 0 else "TIME_EXIT_LOSS",
+        "realized_r": round(net_r, 4),
+        "gross_r": round(gross_r, 4),
+        "cost_r": round(cost_r, 4),
+        "terminal_close": terminal_close,
         "mae_r": round(max_adverse, 4),
         "mfe_r": round(max_favorable, 4),
         "bars_to_outcome": len(future),
@@ -171,7 +211,6 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
         "tp2_touched": tp2_touched,
         "runner_touched": runner_touched,
     }
-
 
 def _replay_symbol(symbol, frames, period_start, period_end):
     one = frames.get("1H")
@@ -191,9 +230,10 @@ def _replay_symbol(symbol, frames, period_start, period_end):
     if end_ts.tzinfo is None:
         end_ts = end_ts.tz_localize("UTC")
 
+    outcome_cutoff = end_ts - pd.Timedelta(hours=BACKTEST_HORIZON_HOURS)
     eligible_positions = [
         i for i, ts in enumerate(one.index)
-        if start_ts <= ts <= end_ts
+        if start_ts <= ts <= outcome_cutoff
     ]
 
     for pos in eligible_positions[::max(1, BACKTEST_STEP_HOURS)]:
@@ -209,6 +249,35 @@ def _replay_symbol(symbol, frames, period_start, period_end):
             continue
 
         ticker = _historical_ticker(one_slice)
+
+        # Simple benchmark, evaluated independently of the complex V2 rules.
+        baseline = bollinger_reversal_short(one_slice)
+        if baseline is not None:
+            baseline_key = baseline["model"]
+            last_baseline = last_signal_by_model.get(baseline_key)
+            baseline_allowed = (
+                last_baseline is None
+                or signal_end - last_baseline >= pd.Timedelta(hours=BACKTEST_COOLDOWN_HOURS)
+            )
+            if baseline_allowed:
+                baseline_future = one.iloc[pos + 1:]
+                baseline_outcome = _evaluate_outcome(
+                    float(baseline["entry"]),
+                    float(baseline["stop"]),
+                    float(baseline["tp1"]),
+                    float(baseline["tp2"]),
+                    float(baseline["runner"]),
+                    baseline_future,
+                    BACKTEST_HORIZON_HOURS,
+                )
+                trades.append({
+                    "symbol": symbol,
+                    "signal_time": signal_end.isoformat(),
+                    **baseline,
+                    **baseline_outcome,
+                })
+                last_signal_by_model[baseline_key] = signal_end
+
         try:
             result = analyze_short(
                 symbol,
@@ -227,6 +296,8 @@ def _replay_symbol(symbol, frames, period_start, period_end):
 
         ret24 = return_pct(one_slice["close"], 24)
         model_info = classify_short_model(result, return_24h_pct=ret24)
+        result.update(model_info)
+        result.update(classify_v21_status(result))
         model = model_info["model"]
 
         last_signal = last_signal_by_model.get(model)
@@ -259,7 +330,11 @@ def _replay_symbol(symbol, frames, period_start, period_end):
         trade = {
             "symbol": symbol,
             "signal_time": signal_end.isoformat(),
+            "strategy_family": "V21_CORE",
             "status": result.get("status"),
+            "v21_status": result.get("v21_status"),
+            "v21_priority": result.get("v21_priority"),
+            "v21_gate": result.get("v21_gate"),
             "score": round(score, 2),
             "model": model,
             "model_flags": model_info.get("model_flags"),
@@ -328,7 +403,7 @@ def run_backtest(symbols=None, days=None):
     equity = equity_curve_metrics(trades)
 
     return {
-        "engine": "Crypto Short Scanner V2 Backtest",
+        "engine": "Crypto Short Scanner V2.1 Backtest",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "period_start": period_start.isoformat(),
         "period_end": period_end.isoformat(),
@@ -345,6 +420,9 @@ def run_backtest(symbols=None, days=None):
             "step_hours": BACKTEST_STEP_HOURS,
             "tp1_rule": "+2R before -1R",
             "same_bar_rule": "conservative_loss",
+            "terminal_exit": f"close at {BACKTEST_HORIZON_HOURS}h if neither TP1 nor SL hits",
+            "fee_bps_round_trip": BACKTEST_FEE_BPS_ROUND_TRIP,
+            "slippage_bps_round_trip": BACKTEST_SLIPPAGE_BPS_ROUND_TRIP,
         },
         "calibration": calibration,
         "equity_sequence": equity,
