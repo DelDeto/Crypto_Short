@@ -32,12 +32,12 @@ def _scan_time_vn(value):
 
 
 def _credentials():
-    token = os.getenv("SHORT_TELEGRAM_BOT_TOKEN")
-    personal_chat_id = os.getenv("SHORT_TELEGRAM_CHAT_ID")
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    personal_chat_id = os.getenv("TELEGRAM_CHAT_ID")
     group_chat_id = os.getenv("TELEGRAM_GROUP_CHAT_ID") or DEFAULT_GROUP_CHAT_ID
 
     if not token:
-        print("Telegram skipped: missing SHORT_TELEGRAM_BOT_TOKEN.")
+        print("Telegram skipped: missing TELEGRAM_BOT_TOKEN.")
         return None, []
 
     chat_ids = []
