@@ -2,12 +2,16 @@ from collections import defaultdict
 
 
 def _metrics(rows):
-    resolved = [r for r in rows if r.get("outcome") in ("WIN", "LOSS")]
-    wins = [r for r in resolved if r.get("outcome") == "WIN"]
-    losses = [r for r in resolved if r.get("outcome") == "LOSS"]
+    resolved = [
+        r for r in rows
+        if r.get("realized_r") is not None
+        and r.get("outcome") not in ("UNRESOLVED", "INVALID_RISK")
+    ]
+    wins = [r for r in resolved if float(r.get("realized_r") or 0.0) > 0.0]
+    losses = [r for r in resolved if float(r.get("realized_r") or 0.0) <= 0.0]
 
-    gross_win_r = sum(float(r.get("realized_r") or 0) for r in wins)
-    gross_loss_r = abs(sum(float(r.get("realized_r") or 0) for r in losses))
+    gross_win_r = sum(max(0.0, float(r.get("realized_r") or 0.0)) for r in wins)
+    gross_loss_r = abs(sum(min(0.0, float(r.get("realized_r") or 0.0)) for r in losses))
     expectancy = (
         sum(float(r.get("realized_r") or 0) for r in resolved) / len(resolved)
         if resolved else None
@@ -26,17 +30,25 @@ def _metrics(rows):
         "win_rate_pct": round(len(wins) / len(resolved) * 100.0, 2) if resolved else None,
         "expectancy_r": round(expectancy, 4) if expectancy is not None else None,
         "profit_factor": round(profit_factor, 4) if profit_factor is not None else None,
+        "avg_cost_r": round(
+            sum(float(r.get("cost_r") or 0) for r in resolved) / len(resolved), 4
+        ) if resolved else None,
         "avg_mae_r": round(
-            sum(float(r.get("mae_r") or 0) for r in rows) / len(rows), 4
+            sum(float(r.get("mae_r") or 0) for r in rows if r.get("mae_r") is not None)
+            / max(1, sum(1 for r in rows if r.get("mae_r") is not None)),
+            4,
         ) if rows else None,
         "avg_mfe_r": round(
-            sum(float(r.get("mfe_r") or 0) for r in rows) / len(rows), 4
+            sum(float(r.get("mfe_r") or 0) for r in rows if r.get("mfe_r") is not None)
+            / max(1, sum(1 for r in rows if r.get("mfe_r") is not None)),
+            4,
         ) if rows else None,
     }
 
-
 def _score_bin(score):
-    score = float(score or 0)
+    if score is None:
+        return "N/A"
+    score = float(score)
     if score >= 90:
         return "90+"
     if score >= 80:
@@ -73,14 +85,25 @@ def _recommendation(metrics):
 
 
 def build_calibration(trades):
+    core = [
+        trade for trade in trades
+        if trade.get("strategy_family", "V21_CORE") != "BOLLINGER_BASELINE"
+    ]
+    baseline = [
+        trade for trade in trades
+        if trade.get("strategy_family") == "BOLLINGER_BASELINE"
+    ]
+
     by_model = defaultdict(list)
     by_score = defaultdict(list)
     by_status = defaultdict(list)
+    by_v21_status = defaultdict(list)
 
-    for trade in trades:
+    for trade in core:
         by_model[trade.get("model", "UNCLASSIFIED")].append(trade)
         by_score[_score_bin(trade.get("score"))].append(trade)
         by_status[trade.get("status", "UNKNOWN")].append(trade)
+        by_v21_status[trade.get("v21_status", "UNKNOWN")].append(trade)
 
     model_stats = {}
     for key, rows in sorted(by_model.items()):
@@ -88,16 +111,30 @@ def build_calibration(trades):
         stats["recommendation"] = _recommendation(stats)
         model_stats[key] = stats
 
-    executable = [
-        trade for trade in trades
+    v1_executable = [
+        trade for trade in core
         if trade.get("status") == "ENTRY_READY"
+    ]
+    v21_executable = [
+        trade for trade in core
+        if trade.get("v21_status") == "ENTRY_READY"
+    ]
+    liquidity = [
+        trade for trade in core
+        if trade.get("model") == "LIQUIDITY_REVERSAL"
+    ]
+    liquidity_top_gainer = [
+        trade for trade in liquidity
+        if trade.get("top_gainer_context")
     ]
 
     return {
-        # "overall" is the research candidate set (WATCH+), useful for
-        # calibration. "entry_ready" reflects the live execution gate.
-        "overall": _metrics(trades),
-        "entry_ready": _metrics(executable),
+        "overall": _metrics(core),
+        "entry_ready": _metrics(v1_executable),
+        "v21_entry_ready": _metrics(v21_executable),
+        "liquidity_reversal": _metrics(liquidity),
+        "liquidity_reversal_top_gainer": _metrics(liquidity_top_gainer),
+        "bollinger_baseline": _metrics(baseline),
         "by_model": model_stats,
         "by_score_bin": {
             key: _metrics(rows)
@@ -107,12 +144,19 @@ def build_calibration(trades):
             key: _metrics(rows)
             for key, rows in sorted(by_status.items())
         },
+        "by_v21_status": {
+            key: _metrics(rows)
+            for key, rows in sorted(by_v21_status.items())
+        },
     }
-
 
 def equity_curve_metrics(trades):
     resolved = sorted(
-        [r for r in trades if r.get("outcome") in ("WIN", "LOSS")],
+        [
+            r for r in trades
+            if r.get("realized_r") is not None
+            and r.get("outcome") not in ("UNRESOLVED", "INVALID_RISK")
+        ],
         key=lambda r: str(r.get("signal_time")),
     )
     equity = 0.0
