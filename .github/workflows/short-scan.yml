@@ -1,0 +1,46 @@
+name: Crypto Short Scanner V1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-scanner
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile
+        run: python -m compileall -q short_algo
+
+      - name: Run short market scan
+        run: python -m short_algo.main
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-Scanner-V1
+          path: |
+            output/short_scan.json
+            output/short_scan.csv
+            output/short_scan.md
+          if-no-files-found: warn
+          retention-days: 30
