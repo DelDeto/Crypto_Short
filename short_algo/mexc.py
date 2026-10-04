@@ -221,3 +221,81 @@ def fetch_many_fast(symbols):
 
 def fetch_many_deep(symbols):
     return _fetch_many(symbols, fetch_deep_frames, DEEP_WORKERS)
+
+
+def get_klines_window(symbol, interval, start_time, end_time, chunk_bars=450):
+    """Fetch a historical closed-candle window in forward chunks.
+
+    start_time/end_time may be pandas Timestamp or datetime-compatible values.
+    Returned timestamps are candle OPEN times. No current/live candle filtering
+    is applied because the caller explicitly defines the historical window.
+    """
+    if interval not in INTERVAL_MAP:
+        raise ValueError(f"Unsupported interval: {interval}")
+
+    start_ts = pd.Timestamp(start_time)
+    end_ts = pd.Timestamp(end_time)
+    if start_ts.tzinfo is None:
+        start_ts = start_ts.tz_localize("UTC")
+    else:
+        start_ts = start_ts.tz_convert("UTC")
+    if end_ts.tzinfo is None:
+        end_ts = end_ts.tz_localize("UTC")
+    else:
+        end_ts = end_ts.tz_convert("UTC")
+
+    seconds = INTERVAL_SECONDS[interval]
+    cursor = int(start_ts.timestamp())
+    end_seconds = int(end_ts.timestamp())
+    frames = []
+
+    while cursor <= end_seconds:
+        chunk_end = min(
+            end_seconds,
+            cursor + seconds * max(50, int(chunk_bars)),
+        )
+        payload = _get_json(
+            f"/api/v1/contract/kline/{symbol}",
+            params={
+                "interval": INTERVAL_MAP[interval],
+                "start": cursor,
+                "end": chunk_end,
+            },
+        )
+        frame = _parse_kline(payload)
+        if not frame.empty:
+            frames.append(frame)
+
+        next_cursor = chunk_end + seconds
+        if next_cursor <= cursor:
+            break
+        cursor = next_cursor
+
+    if not frames:
+        return pd.DataFrame(
+            columns=["open", "high", "low", "close", "volume"]
+        )
+
+    combined = (
+        pd.concat(frames)
+        .sort_index()
+        .loc[lambda x: ~x.index.duplicated(keep="last")]
+    )
+    return combined.loc[
+        (combined.index >= start_ts) & (combined.index <= end_ts)
+    ]
+
+
+def fetch_backtest_frames(symbol, start_time, end_time, warmup_days=25):
+    """Fetch enough warmup candles before the requested replay period."""
+    start_ts = pd.Timestamp(start_time)
+    if start_ts.tzinfo is None:
+        start_ts = start_ts.tz_localize("UTC")
+    else:
+        start_ts = start_ts.tz_convert("UTC")
+    warmup_start = start_ts - pd.Timedelta(days=warmup_days)
+
+    return {
+        "1H": get_klines_window(symbol, "1h", warmup_start, end_time),
+        "4H": get_klines_window(symbol, "4h", warmup_start, end_time),
+    }
