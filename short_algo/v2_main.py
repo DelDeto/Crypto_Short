@@ -36,6 +36,7 @@ def _fmt(value, decimals=2):
 def _summary_markdown(report):
     cal = report.get("calibration") or {}
     overall = cal.get("overall") or {}
+    entry_ready = cal.get("entry_ready") or {}
     equity = report.get("equity_sequence") or {}
 
     lines = [
@@ -44,11 +45,19 @@ def _summary_markdown(report):
         f"- Period: {report.get('period_start')} → {report.get('period_end')}",
         f"- Days: {report.get('days')}",
         f"- Symbols: {report.get('selected_symbol_count')}",
-        f"- Signals: {overall.get('signals', 0)}",
-        f"- Resolved: {overall.get('resolved', 0)}",
-        f"- Win rate @ +2R before -1R: {_fmt(overall.get('win_rate_pct'))}%",
-        f"- Expectancy: {_fmt(overall.get('expectancy_r'), 3)}R / resolved signal",
-        f"- Profit factor: {_fmt(overall.get('profit_factor'), 3)}",
+        "### Research candidates (WATCH+)",
+        f"- Candidate signals: {overall.get('signals', 0)}",
+        f"- Resolved candidates: {overall.get('resolved', 0)}",
+        f"- Candidate win rate @ +2R before -1R: {_fmt(overall.get('win_rate_pct'))}%",
+        f"- Candidate expectancy: {_fmt(overall.get('expectancy_r'), 3)}R / resolved signal",
+        f"- Candidate profit factor: {_fmt(overall.get('profit_factor'), 3)}",
+        "",
+        "### Live execution gate (ENTRY_READY only)",
+        f"- ENTRY_READY signals: {entry_ready.get('signals', 0)}",
+        f"- Resolved ENTRY_READY: {entry_ready.get('resolved', 0)}",
+        f"- ENTRY_READY win rate: {_fmt(entry_ready.get('win_rate_pct'))}%",
+        f"- ENTRY_READY expectancy: {_fmt(entry_ready.get('expectancy_r'), 3)}R",
+        f"- ENTRY_READY profit factor: {_fmt(entry_ready.get('profit_factor'), 3)}",
         f"- Net sequence: {_fmt(equity.get('net_r'), 2)}R",
         f"- Max drawdown: {_fmt(equity.get('max_drawdown_r'), 2)}R",
         f"- Longest loss streak: {equity.get('longest_loss_streak', 0)}",
