@@ -48,3 +48,8 @@ BACKTEST_WARMUP_DAYS = int(os.getenv("BACKTEST_WARMUP_DAYS", "25"))
 
 BACKTEST_SHARD_INDEX = int(os.getenv("BACKTEST_SHARD_INDEX", "0"))
 BACKTEST_SHARD_COUNT = max(1, int(os.getenv("BACKTEST_SHARD_COUNT", "1")))
+
+# V2.1 execution-cost assumptions. These are research assumptions, not claims
+# about a specific exchange fee tier. Override them from workflow inputs/env.
+BACKTEST_FEE_BPS_ROUND_TRIP = float(os.getenv("BACKTEST_FEE_BPS_ROUND_TRIP", "8"))
+BACKTEST_SLIPPAGE_BPS_ROUND_TRIP = float(os.getenv("BACKTEST_SLIPPAGE_BPS_ROUND_TRIP", "6"))
