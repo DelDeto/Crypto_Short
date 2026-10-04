@@ -12,6 +12,8 @@ from .config import (
     BACKTEST_STEP_HOURS,
     BACKTEST_SYMBOL_LIMIT,
     BACKTEST_WARMUP_DAYS,
+    BACKTEST_SHARD_INDEX,
+    BACKTEST_SHARD_COUNT,
 )
 from .indicators import return_pct
 from .mexc import fetch_backtest_frames, get_all_tickers, get_contract_universe
@@ -40,15 +42,35 @@ def _historical_ticker(one_hour_frame):
     }
 
 
+def _apply_shard(selected, meta):
+    shard_count = max(1, int(BACKTEST_SHARD_COUNT))
+    shard_index = int(BACKTEST_SHARD_INDEX)
+    if shard_index < 0 or shard_index >= shard_count:
+        raise ValueError(
+            f"BACKTEST_SHARD_INDEX={shard_index} outside 0..{shard_count - 1}"
+        )
+
+    full_count = len(selected)
+    sharded = selected[shard_index::shard_count]
+    meta = {
+        **meta,
+        "pre_shard_symbol_count": full_count,
+        "shard_index": shard_index,
+        "shard_count": shard_count,
+        "shard_symbol_count": len(sharded),
+    }
+    return sharded, meta
+
+
 def _select_symbols(symbols=None):
     universe = get_contract_universe()
     if symbols:
         wanted = {str(s).strip().upper() for s in symbols if str(s).strip()}
         selected = [s for s in universe if s.upper() in wanted]
-        return selected, {
+        return _apply_shard(selected, {
             "selection": "explicit",
             "universe_count": len(universe),
-        }
+        })
 
     tickers = get_all_tickers()
     ranked = sorted(
@@ -59,7 +81,7 @@ def _select_symbols(symbols=None):
     if BACKTEST_SYMBOL_LIMIT > 0:
         ranked = ranked[:BACKTEST_SYMBOL_LIMIT]
 
-    return ranked, {
+    return _apply_shard(ranked, {
         "selection": "current_turnover_rank",
         "universe_count": len(universe),
         "symbol_limit": BACKTEST_SYMBOL_LIMIT,
@@ -68,7 +90,7 @@ def _select_symbols(symbols=None):
             "for sample selection. Historical signal scoring does not use today's "
             "turnover/funding/spread."
         ),
-    }
+    })
 
 
 def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
@@ -265,7 +287,9 @@ def _replay_symbol(symbol, frames, period_start, period_end):
 def run_backtest(symbols=None, days=None):
     days = int(days or BACKTEST_DAYS)
     finished_at = datetime.now(timezone.utc)
-    period_end = finished_at - timedelta(hours=2)
+    # Round to a shared UTC hour so all parallel shards replay the exact
+    # same historical window even if their jobs start a few minutes apart.
+    period_end = finished_at.replace(minute=0, second=0, microsecond=0) - timedelta(hours=2)
     period_start = period_end - timedelta(days=days)
 
     selected, selection_meta = _select_symbols(symbols)
@@ -293,8 +317,10 @@ def run_backtest(symbols=None, days=None):
             errors.append({"symbol": symbol, "error": str(exc)})
 
         print(
+            f"[shard {BACKTEST_SHARD_INDEX + 1}/{BACKTEST_SHARD_COUNT}] "
             f"[{index}/{len(selected)}] {symbol}: "
-            f"total signals={len(trades)} errors={len(errors)}"
+            f"total signals={len(trades)} errors={len(errors)}",
+            flush=True,
         )
 
     trades.sort(key=lambda x: (str(x.get("signal_time")), x.get("symbol", "")))
@@ -307,6 +333,8 @@ def run_backtest(symbols=None, days=None):
         "period_start": period_start.isoformat(),
         "period_end": period_end.isoformat(),
         "days": days,
+        "shard_index": BACKTEST_SHARD_INDEX,
+        "shard_count": BACKTEST_SHARD_COUNT,
         "selected_symbols": selected,
         "selected_symbol_count": len(selected),
         "selection_meta": selection_meta,
