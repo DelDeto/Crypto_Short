@@ -34,3 +34,14 @@ RUNNER_R = float(os.getenv("RUNNER_R", "5.0"))
 
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
 TOP_REPORT = int(os.getenv("TOP_REPORT", "20"))
+
+
+# V2 historical validation. Defaults are intentionally moderate for GitHub
+# Actions; set BACKTEST_SYMBOL_LIMIT=0 to request all currently tradable symbols.
+BACKTEST_DAYS = int(os.getenv("BACKTEST_DAYS", "90"))
+BACKTEST_SYMBOL_LIMIT = int(os.getenv("BACKTEST_SYMBOL_LIMIT", "80"))
+BACKTEST_HORIZON_HOURS = int(os.getenv("BACKTEST_HORIZON_HOURS", "72"))
+BACKTEST_COOLDOWN_HOURS = int(os.getenv("BACKTEST_COOLDOWN_HOURS", "12"))
+BACKTEST_STEP_HOURS = int(os.getenv("BACKTEST_STEP_HOURS", "1"))
+BACKTEST_MIN_SCORE = float(os.getenv("BACKTEST_MIN_SCORE", "60"))
+BACKTEST_WARMUP_DAYS = int(os.getenv("BACKTEST_WARMUP_DAYS", "25"))
