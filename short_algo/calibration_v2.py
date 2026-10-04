@@ -88,8 +88,16 @@ def build_calibration(trades):
         stats["recommendation"] = _recommendation(stats)
         model_stats[key] = stats
 
+    executable = [
+        trade for trade in trades
+        if trade.get("status") == "ENTRY_READY"
+    ]
+
     return {
+        # "overall" is the research candidate set (WATCH+), useful for
+        # calibration. "entry_ready" reflects the live execution gate.
         "overall": _metrics(trades),
+        "entry_ready": _metrics(executable),
         "by_model": model_stats,
         "by_score_bin": {
             key: _metrics(rows)
