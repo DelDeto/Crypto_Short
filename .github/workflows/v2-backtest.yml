@@ -1,4 +1,4 @@
-name: Crypto Short V2 Backtest
+name: Crypto Short V2.1 Backtest
 
 on:
   workflow_dispatch:
@@ -12,15 +12,25 @@ on:
         required: true
         default: "80"
       horizon_hours:
-        description: "Hours allowed for +2R or -1R outcome"
+        description: "Hours allowed for +2R / -1R / terminal exit"
         required: true
         default: "72"
+      fee_bps:
+        description: "Round-trip fee assumption in bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage assumption in bps"
+        required: true
+        default: "6"
   push:
     branches: [main]
     paths:
       - "short_algo/backtest.py"
       - "short_algo/calibration_v2.py"
       - "short_algo/models.py"
+      - "short_algo/v21.py"
+      - "short_algo/baselines.py"
       - "short_algo/v2_main.py"
       - "short_algo/v2_merge.py"
       - "short_algo/mexc.py"
@@ -48,6 +58,8 @@ jobs:
       BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '14' }}
       BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '8' }}
       BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
       BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
       BACKTEST_SHARD_COUNT: "4"
 
@@ -73,7 +85,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V2-Shard-${{ matrix.shard }}
+          name: Crypto-Short-V21-Shard-${{ matrix.shard }}
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
@@ -103,7 +115,7 @@ jobs:
       - name: Download all shard outputs
         uses: actions/download-artifact@v4
         with:
-          pattern: Crypto-Short-V2-Shard-*
+          pattern: Crypto-Short-V21-Shard-*
           path: shard_outputs
 
       - name: Merge and recalculate V2 metrics
@@ -115,7 +127,7 @@ jobs:
       - name: Upload final V2 report
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V2-Backtest-Final
+          name: Crypto-Short-V21-Backtest-Final
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
