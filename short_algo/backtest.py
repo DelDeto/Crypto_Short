@@ -400,7 +400,23 @@ def run_backtest(symbols=None, days=None):
 
     trades.sort(key=lambda x: (str(x.get("signal_time")), x.get("symbol", "")))
     calibration = build_calibration(trades)
-    equity = equity_curve_metrics(trades)
+
+    core_trades = [
+        trade for trade in trades
+        if trade.get("strategy_family", "V21_CORE") != "BOLLINGER_BASELINE"
+    ]
+    v21_entry_trades = [
+        trade for trade in core_trades
+        if trade.get("v21_status") == "ENTRY_READY"
+    ]
+    baseline_trades = [
+        trade for trade in trades
+        if trade.get("strategy_family") == "BOLLINGER_BASELINE"
+    ]
+
+    equity = equity_curve_metrics(core_trades)
+    v21_equity = equity_curve_metrics(v21_entry_trades)
+    baseline_equity = equity_curve_metrics(baseline_trades)
 
     return {
         "engine": "Crypto Short Scanner V2.1 Backtest",
@@ -426,6 +442,8 @@ def run_backtest(symbols=None, days=None):
         },
         "calibration": calibration,
         "equity_sequence": equity,
+        "v21_equity_sequence": v21_equity,
+        "baseline_equity_sequence": baseline_equity,
         "trades": trades,
         "errors": errors,
     }
