@@ -36,7 +36,11 @@ jobs:
       - name: Compile
         run: python -m compileall -q short_algo
 
-      - name: Run short market scan
+      - name: Run short market scan and Telegram notify
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         run: python -m short_algo.main
 
       - name: Upload report
