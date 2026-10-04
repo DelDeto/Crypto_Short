@@ -107,3 +107,24 @@ Outputs:
 - `output/v2_trades.csv`
 - `output/v2_calibration.json`
 - `output/v2_summary.md`
+
+
+### Parallel execution
+
+V2 backtests use **4 symbol shards** in GitHub Actions.
+
+For the recommended 90-day / 80-symbol run:
+
+- shard 0: approximately 20 symbols
+- shard 1: approximately 20 symbols
+- shard 2: approximately 20 symbols
+- shard 3: approximately 20 symbols
+- final merge job: combines all trades, recalculates calibration, expectancy, profit factor, MAE/MFE and drawdown on the complete sample
+
+Sharding is performed by symbol rather than by time. This preserves each symbol's warm-up history and the full forward outcome horizon around every signal.
+
+Each shard uploads an intermediate artifact. The merged result is published as:
+
+`Crypto-Short-V2-Backtest-Final`
+
+The merge step requires all expected shard indexes, so an incomplete run cannot silently produce a misleading "final" report.
