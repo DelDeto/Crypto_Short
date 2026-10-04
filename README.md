@@ -50,3 +50,60 @@ V1 is intentionally manual while the scoring logic is validated. Automated sched
 ## Risk note
 
 This project is a research/ranking system, not an auto-execution bot. Crypto perpetual futures are highly volatile and leveraged positions can lose more quickly than spot positions.
+
+
+## V2 — Backtest & calibration
+
+V2 keeps the live V1 scanner intact and adds a research layer to validate whether the rules have measurable historical edge.
+
+### Exclusive setup models
+
+- **TREND_CONTINUATION** — bearish 4H/1H structure plus breakdown/retest.
+- **LIQUIDITY_REVERSAL** — prior upside move plus buy-side liquidity sweep and bearish failure/rejection. A top gainer is only hunting context; the sweep/failure is the trigger.
+- **SUPPLY_FADE** — rally into 1H/4H supply followed by rejection/lower-high behavior.
+
+### Backtest methodology
+
+- Historical 1H replay with only candles closed at the signal timestamp.
+- 4H candles must be fully closed before they are visible to a 1H signal.
+- Primary outcome: **+2R before -1R**.
+- Same-candle TP1 + SL is conservatively counted as a loss because OHLC cannot reveal intrabar ordering.
+- Default horizon: 72 hours.
+- Duplicate signals from the same model/symbol are throttled by a cooldown.
+- Today's funding, spread and turnover are **not** inserted into historical signal scoring.
+- Current turnover can be used only to choose a manageable research sample; this creates selection bias and is explicitly reported.
+
+### Calibration outputs
+
+V2 reports:
+
+- win rate;
+- expectancy in R;
+- profit factor;
+- MAE / MFE;
+- sequential max drawdown;
+- longest loss streak;
+- breakdown by setup model;
+- breakdown by score bin;
+- KEEP / PROMOTE / DEMOTE suggestions only after enough resolved samples.
+
+Calibration does **not** automatically modify live V1 weights.
+
+### Run V2
+
+Use **Actions → Crypto Short V2 Backtest → Run workflow**.
+
+Recommended first validation:
+
+- 90 days
+- 80 symbols
+- 72-hour outcome horizon
+
+For a broader robustness check, repeat with 180 days and explicit symbol cohorts rather than relying only on today's most-liquid contracts.
+
+Outputs:
+
+- `output/v2_backtest.json`
+- `output/v2_trades.csv`
+- `output/v2_calibration.json`
+- `output/v2_summary.md`
