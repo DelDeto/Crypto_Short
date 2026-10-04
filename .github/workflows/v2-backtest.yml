@@ -1,0 +1,73 @@
+name: Crypto Short V2 Backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Historical replay days"
+        required: true
+        default: "90"
+      symbol_limit:
+        description: "Current liquid symbols to replay (0 = all)"
+        required: true
+        default: "80"
+      horizon_hours:
+        description: "Hours allowed for +2R or -1R outcome"
+        required: true
+        default: "72"
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/backtest.py"
+      - "short_algo/calibration_v2.py"
+      - "short_algo/models.py"
+      - "short_algo/v2_main.py"
+      - "short_algo/mexc.py"
+      - ".github/workflows/v2-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v2-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '14' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '8' }}
+      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile V2
+        run: python -m compileall -q short_algo
+
+      - name: Run V2 historical replay
+        run: python -m short_algo.v2_main
+
+      - name: Upload V2 research outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V2-Backtest
+          path: |
+            output/v2_backtest.json
+            output/v2_trades.csv
+            output/v2_calibration.json
+            output/v2_summary.md
+          if-no-files-found: warn
+          retention-days: 30
