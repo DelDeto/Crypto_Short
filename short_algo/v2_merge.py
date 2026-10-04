@@ -62,7 +62,23 @@ def merge_reports(shards):
     trades = _dedupe_trades(trades)
     symbols = sorted(set(symbols))
     calibration = build_calibration(trades)
-    equity = equity_curve_metrics(trades)
+
+    core_trades = [
+        trade for trade in trades
+        if trade.get("strategy_family", "V21_CORE") != "BOLLINGER_BASELINE"
+    ]
+    v21_entry_trades = [
+        trade for trade in core_trades
+        if trade.get("v21_status") == "ENTRY_READY"
+    ]
+    baseline_trades = [
+        trade for trade in trades
+        if trade.get("strategy_family") == "BOLLINGER_BASELINE"
+    ]
+
+    equity = equity_curve_metrics(core_trades)
+    v21_equity = equity_curve_metrics(v21_entry_trades)
+    baseline_equity = equity_curve_metrics(baseline_trades)
 
     first = shards[0]
     periods = {
@@ -71,7 +87,7 @@ def merge_reports(shards):
     }
 
     return {
-        "engine": "Crypto Short Scanner V2 Parallel Backtest",
+        "engine": "Crypto Short Scanner V2.1 Parallel Backtest",
         "generated_at": first.get("generated_at"),
         "period_start": min(str(r.get("period_start")) for r in shards),
         "period_end": max(str(r.get("period_end")) for r in shards),
@@ -92,6 +108,8 @@ def merge_reports(shards):
         "settings": first.get("settings") or {},
         "calibration": calibration,
         "equity_sequence": equity,
+        "v21_equity_sequence": v21_equity,
+        "baseline_equity_sequence": baseline_equity,
         "trades": trades,
         "errors": errors,
         "shards": source_shards,
@@ -149,10 +167,14 @@ def main():
         "resolved": overall.get("resolved"),
         "entry_ready_signals": entry_ready.get("signals"),
         "entry_ready_resolved": entry_ready.get("resolved"),
+        "v21_entry_ready_signals": ((report.get("calibration") or {}).get("v21_entry_ready") or {}).get("signals"),
+        "v21_entry_ready_resolved": ((report.get("calibration") or {}).get("v21_entry_ready") or {}).get("resolved"),
         "win_rate_pct": overall.get("win_rate_pct"),
         "expectancy_r": overall.get("expectancy_r"),
         "profit_factor": overall.get("profit_factor"),
         "equity_sequence": report.get("equity_sequence"),
+        "v21_equity_sequence": report.get("v21_equity_sequence"),
+        "baseline_equity_sequence": report.get("baseline_equity_sequence"),
         "errors": len(report.get("errors") or []),
     }, ensure_ascii=False, indent=2))
     return 0
