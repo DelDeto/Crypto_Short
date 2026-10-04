@@ -45,9 +45,9 @@ jobs:
         shard: [0, 1, 2, 3]
     env:
       PYTHONUNBUFFERED: "1"
-      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '14' }}
-      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '8' }}
-      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '90' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '80' }}
+      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '72' }}
       BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
       BACKTEST_SHARD_COUNT: "4"
 
