@@ -2,6 +2,12 @@ name: Crypto Short Scanner V1
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/**"
+      - "requirements.txt"
+      - ".github/workflows/short-scan.yml"
 
 permissions:
   contents: read
