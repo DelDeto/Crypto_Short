@@ -1,6 +1,7 @@
 import json
 import sys
 
+from .notifier import send_telegram
 from .scanner import run_scan, save_report
 
 
@@ -28,8 +29,9 @@ def main():
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))
 
-    # Data-source failures should make Actions visibly fail instead of silently
-    # producing an empty "successful" scan.
+    telegram_sent = send_telegram(report)
+    print(f"telegram_sent={telegram_sent}")
+
     if report["fast_success"] == 0 or report["deep_success"] == 0:
         return 2
     return 0
