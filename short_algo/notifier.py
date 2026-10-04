@@ -34,19 +34,18 @@ def _scan_time_vn(value):
 def _credentials():
     token = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("SHORT_TELEGRAM_BOT_TOKEN")
     personal_chat_id = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("SHORT_TELEGRAM_CHAT_ID")
-    group_chat_id = os.getenv("TELEGRAM_GROUP_CHAT_ID") or DEFAULT_GROUP_CHAT_ID
-
     if not token:
         print("Telegram skipped: missing TELEGRAM_BOT_TOKEN.")
         return None, []
 
+    # Private-first mode: only send to the user's direct chat for validation.
+    # Group delivery will be enabled later after the user approves the signal format.
     chat_ids = []
-    for chat_id in (personal_chat_id, group_chat_id):
-        if chat_id and chat_id not in chat_ids:
-            chat_ids.append(chat_id)
+    if personal_chat_id:
+        chat_ids.append(personal_chat_id)
 
     if not chat_ids:
-        print("Telegram skipped: no destination configured.")
+        print("Telegram skipped: missing personal Telegram chat ID.")
         return None, []
 
     return token, chat_ids
