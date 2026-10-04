@@ -71,6 +71,14 @@ def get_contract_universe():
             continue
         if state in (2, 3, 4, "2", "3", "4"):
             continue
+
+        # Crypto-only hygiene: MEXC may list tokenized stock-style contracts
+        # in the same USDT perpetual catalogue. Keep this scanner focused on
+        # crypto assets rather than synthetic equity tickers.
+        upper_symbol = str(symbol).upper()
+        if "STOCK" in upper_symbol:
+            continue
+
         symbols.append(symbol)
     return sorted(set(symbols))
 
