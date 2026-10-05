@@ -58,6 +58,23 @@ def _score_bin(score):
     return "60-69"
 
 
+def _v22_score_bin(score):
+    if score is None:
+        return "N/A"
+    score = float(score)
+    if score >= 85:
+        return "85+"
+    if score >= 80:
+        return "80-84"
+    if score >= 75:
+        return "75-79"
+    if score >= 70:
+        return "70-74"
+    if score >= 65:
+        return "65-69"
+    return "<65"
+
+
 def _recommendation(metrics):
     samples = int(metrics.get("resolved") or 0)
     expectancy = metrics.get("expectancy_r")
@@ -85,9 +102,13 @@ def _recommendation(metrics):
 
 
 def build_calibration(trades):
-    core = [
+    v21_core = [
         trade for trade in trades
-        if trade.get("strategy_family", "V21_CORE") != "BOLLINGER_BASELINE"
+        if trade.get("strategy_family") == "V21_CORE"
+    ]
+    v22_core = [
+        trade for trade in trades
+        if trade.get("strategy_family") == "V22_CORE"
     ]
     baseline = [
         trade for trade in trades
@@ -98,12 +119,16 @@ def build_calibration(trades):
     by_score = defaultdict(list)
     by_status = defaultdict(list)
     by_v21_status = defaultdict(list)
+    by_v22_score = defaultdict(list)
 
-    for trade in core:
+    for trade in v21_core:
         by_model[trade.get("model", "UNCLASSIFIED")].append(trade)
         by_score[_score_bin(trade.get("score"))].append(trade)
         by_status[trade.get("status", "UNKNOWN")].append(trade)
         by_v21_status[trade.get("v21_status", "UNKNOWN")].append(trade)
+
+    for trade in v22_core:
+        by_v22_score[_v22_score_bin(trade.get("v22_score"))].append(trade)
 
     model_stats = {}
     for key, rows in sorted(by_model.items()):
@@ -112,15 +137,15 @@ def build_calibration(trades):
         model_stats[key] = stats
 
     v1_executable = [
-        trade for trade in core
+        trade for trade in v21_core
         if trade.get("status") == "ENTRY_READY"
     ]
     v21_executable = [
-        trade for trade in core
+        trade for trade in v21_core
         if trade.get("v21_status") == "ENTRY_READY"
     ]
     liquidity = [
-        trade for trade in core
+        trade for trade in v21_core
         if trade.get("model") == "LIQUIDITY_REVERSAL"
     ]
     liquidity_top_gainer = [
@@ -128,17 +153,38 @@ def build_calibration(trades):
         if trade.get("top_gainer_context")
     ]
 
+    v22_executable = [
+        trade for trade in v22_core
+        if trade.get("v22_status") == "ENTRY_READY"
+    ]
+    v22_top_gainer = [
+        trade for trade in v22_executable
+        if trade.get("top_gainer_context")
+    ]
+    v22_ranked = [
+        trade for trade in v22_core
+        if trade.get("v22_ranked") is True
+    ]
+
     return {
-        "overall": _metrics(core),
+        "overall": _metrics(v21_core),
         "entry_ready": _metrics(v1_executable),
         "v21_entry_ready": _metrics(v21_executable),
         "liquidity_reversal": _metrics(liquidity),
         "liquidity_reversal_top_gainer": _metrics(liquidity_top_gainer),
+        "v22_all": _metrics(v22_core),
+        "v22_entry_ready": _metrics(v22_executable),
+        "v22_top_gainer_entry_ready": _metrics(v22_top_gainer),
+        "v22_ranked_portfolio": _metrics(v22_ranked),
         "bollinger_baseline": _metrics(baseline),
         "by_model": model_stats,
         "by_score_bin": {
             key: _metrics(rows)
             for key, rows in sorted(by_score.items())
+        },
+        "by_v22_score_bin": {
+            key: _metrics(rows)
+            for key, rows in sorted(by_v22_score.items())
         },
         "by_status": {
             key: _metrics(rows)
