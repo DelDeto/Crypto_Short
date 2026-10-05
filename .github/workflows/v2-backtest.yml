@@ -1,4 +1,4 @@
-name: Crypto Short V2.1 Backtest
+name: Crypto Short V2.2 Backtest
 
 on:
   workflow_dispatch:
@@ -30,6 +30,8 @@ on:
       - "short_algo/calibration_v2.py"
       - "short_algo/models.py"
       - "short_algo/v21.py"
+      - "short_algo/v22.py"
+      - "short_algo/v22_portfolio.py"
       - "short_algo/baselines.py"
       - "short_algo/v2_main.py"
       - "short_algo/v2_merge.py"
@@ -48,7 +50,7 @@ jobs:
   backtest:
     name: backtest-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
@@ -75,17 +77,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Compile V2
+      - name: Compile V2.2
         run: python -m compileall -q short_algo
 
-      - name: Run V2 historical replay shard
+      - name: Run V2.2 historical replay shard
         run: python -m short_algo.v2_main
 
       - name: Upload shard research outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V21-Shard-${{ matrix.shard }}
+          name: Crypto-Short-V22-Shard-${{ matrix.shard }}
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
@@ -95,7 +97,7 @@ jobs:
           retention-days: 14
 
   merge:
-    name: merge-v2-results
+    name: merge-v22-results
     needs: backtest
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -115,19 +117,19 @@ jobs:
       - name: Download all shard outputs
         uses: actions/download-artifact@v4
         with:
-          pattern: Crypto-Short-V21-Shard-*
+          pattern: Crypto-Short-V22-Shard-*
           path: shard_outputs
 
-      - name: Merge and recalculate V2 metrics
+      - name: Merge and recalculate V2.2 metrics
         run: python -m short_algo.v2_merge shard_outputs
 
       - name: Publish summary
         run: cat output/v2_summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload final V2 report
+      - name: Upload final V2.2 report
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V21-Backtest-Final
+          name: Crypto-Short-V22-Backtest-Final
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
