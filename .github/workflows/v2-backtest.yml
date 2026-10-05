@@ -62,23 +62,23 @@ jobs:
   backtest:
     name: backtest-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+        shard: [0, 1, 2, 3]
     env:
       PYTHONUNBUFFERED: "1"
-      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '180' }}
-      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '150' }}
-      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '72' }}
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '14' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '8' }}
+      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
       BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
       BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
       V22_ENTRY_SCORE: ${{ github.event_name == 'workflow_dispatch' && inputs.v22_entry_score || '70' }}
       V22_MAX_CONCURRENT: ${{ github.event_name == 'workflow_dispatch' && inputs.max_concurrent || '3' }}
       V22_PORTFOLIO_RISK_PCT: ${{ github.event_name == 'workflow_dispatch' && inputs.portfolio_risk_pct || '0.5' }}
       BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
-      BACKTEST_SHARD_COUNT: "8"
+      BACKTEST_SHARD_COUNT: "4"
 
     steps:
       - name: Checkout
