@@ -53,3 +53,12 @@ BACKTEST_SHARD_COUNT = max(1, int(os.getenv("BACKTEST_SHARD_COUNT", "1")))
 # about a specific exchange fee tier. Override them from workflow inputs/env.
 BACKTEST_FEE_BPS_ROUND_TRIP = float(os.getenv("BACKTEST_FEE_BPS_ROUND_TRIP", "8"))
 BACKTEST_SLIPPAGE_BPS_ROUND_TRIP = float(os.getenv("BACKTEST_SLIPPAGE_BPS_ROUND_TRIP", "6"))
+
+# V2.2 research defaults.
+V22_ENTRY_SCORE = float(os.getenv("V22_ENTRY_SCORE", "70"))
+V22_MAX_PER_TIMESTAMP = int(os.getenv("V22_MAX_PER_TIMESTAMP", "3"))
+V22_MAX_CONCURRENT = int(os.getenv("V22_MAX_CONCURRENT", "3"))
+V22_PORTFOLIO_RISK_PCT = float(os.getenv("V22_PORTFOLIO_RISK_PCT", "0.5"))
+V22_STARTING_EQUITY = float(os.getenv("V22_STARTING_EQUITY", "10000"))
+V22_WALK_FORWARD_TRAIN_DAYS = int(os.getenv("V22_WALK_FORWARD_TRAIN_DAYS", "60"))
+V22_WALK_FORWARD_TEST_DAYS = int(os.getenv("V22_WALK_FORWARD_TEST_DAYS", "30"))
