@@ -101,11 +101,26 @@ def portfolio_metrics(trades, starting_equity=10000.0, risk_pct=0.5):
     }
 
 
+def _passes_v22_hard_gate(trade):
+    gate = trade.get("v22_gate") or {}
+    return bool(
+        gate.get("context_ok")
+        and gate.get("confirmation_15m_ok")
+        and gate.get("location_ok")
+        and gate.get("risk_ok")
+        and not gate.get("btc_risk_on_block")
+    )
+
+
 def walk_forward_threshold(trades, train_days=60, test_days=30, thresholds=(60, 65, 70, 75, 80)):
+    # Threshold tuning is allowed to vary only the V2.2 score. All structural
+    # hard gates remain fixed in both train and test windows so walk-forward
+    # cannot "cheat" by relaxing 15m confirmation, location, risk, or BTC regime.
     candidates = [
         t for t in trades
         if t.get("strategy_family") == "V22_CORE"
         and t.get("v22_score") is not None
+        and _passes_v22_hard_gate(t)
         and _is_resolved(t)
     ]
     if not candidates:
