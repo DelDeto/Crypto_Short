@@ -67,11 +67,11 @@ jobs:
   backtest:
     name: v3-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     env:
       PYTHONUNBUFFERED: "1"
       BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '21' }}
@@ -84,7 +84,7 @@ jobs:
       V3_MAX_PER_CLUSTER: ${{ github.event_name == 'workflow_dispatch' && inputs.max_per_cluster || '1' }}
       V3_PORTFOLIO_RISK_PCT: ${{ github.event_name == 'workflow_dispatch' && inputs.portfolio_risk_pct || '0.5' }}
       BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
-      BACKTEST_SHARD_COUNT: "8"
+      BACKTEST_SHARD_COUNT: "16"
 
     steps:
       - name: Checkout
