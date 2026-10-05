@@ -17,8 +17,8 @@ from .config import (
     QUOTE_COIN,
 )
 
-INTERVAL_MAP = {"1h": "Min60", "4h": "Hour4"}
-INTERVAL_SECONDS = {"1h": 3600, "4h": 14400}
+INTERVAL_MAP = {"15m": "Min15", "1h": "Min60", "4h": "Hour4"}
+INTERVAL_SECONDS = {"15m": 900, "1h": 3600, "4h": 14400}
 
 _REQUEST_LOCK = threading.Lock()
 _LAST_REQUEST_AT = 0.0
@@ -304,6 +304,7 @@ def fetch_backtest_frames(symbol, start_time, end_time, warmup_days=25):
     warmup_start = start_ts - pd.Timedelta(days=warmup_days)
 
     return {
+        "15M": get_klines_window(symbol, "15m", warmup_start, end_time),
         "1H": get_klines_window(symbol, "1h", warmup_start, end_time),
         "4H": get_klines_window(symbol, "4h", warmup_start, end_time),
     }
