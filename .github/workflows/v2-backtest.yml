@@ -1,4 +1,4 @@
-name: Crypto Short V2.2 Backtest
+name: Crypto Short V2.2.1 Validation
 
 on:
   workflow_dispatch:
@@ -92,17 +92,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Compile V2.2
+      - name: Compile V2.2.1
         run: python -m compileall -q short_algo
 
-      - name: Run V2.2 historical replay shard
+      - name: Run V2.2.1 historical replay shard
         run: python -m short_algo.v2_main
 
       - name: Upload shard research outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V22-Shard-${{ matrix.shard }}
+          name: Crypto-Short-V221-Shard-${{ matrix.shard }}
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
@@ -112,7 +112,7 @@ jobs:
           retention-days: 14
 
   merge:
-    name: merge-v22-results
+    name: merge-v221-results
     needs: backtest
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -132,19 +132,19 @@ jobs:
       - name: Download all shard outputs
         uses: actions/download-artifact@v4
         with:
-          pattern: Crypto-Short-V22-Shard-*
+          pattern: Crypto-Short-V221-Shard-*
           path: shard_outputs
 
-      - name: Merge and recalculate V2.2 metrics
+      - name: Merge and recalculate V2.2.1 metrics
         run: python -m short_algo.v2_merge shard_outputs
 
       - name: Publish summary
         run: cat output/v2_summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload final V2.2 report
+      - name: Upload final V2.2.1 validation
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-V22-Backtest-Final
+          name: Crypto-Short-V221-Validation-Final
           path: |
             output/v2_backtest.json
             output/v2_trades.csv
