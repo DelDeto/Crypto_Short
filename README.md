@@ -215,3 +215,24 @@ V2.2 should not replace the live scanner solely because one in-sample run is
 positive. Promotion should require a materially positive expectancy after costs,
 a reasonable profit factor and drawdown, sufficient sample size, and positive
 walk-forward behavior.
+
+
+## V2.2.1 — Crypto-only validation
+
+V2.2.1 is a validation release, not a new trading strategy. The V2.2 entry
+logic, 15m confirmation, stop/target rules, BTC regime filter and execution
+cost assumptions remain unchanged.
+
+The validation changes are methodological:
+
+- restrict the MEXC derivatives cohort to crypto contracts only;
+- exclude equity indices, ETFs, stock synthetics, commodity synthetics and
+  commodity-backed gold tokens from the research cohort;
+- record an audit list of excluded non-crypto contracts in every final report;
+- keep all V2.2 hard gates fixed during walk-forward validation;
+- allow walk-forward to tune only the V2.2 score threshold;
+- use 60-day train / 30-day test windows by default;
+- validate on a broader recommended cohort of 180 days × 150 crypto contracts.
+
+The goal is to determine whether the positive V2.2 result survives a cleaner,
+larger and time-separated sample before any live promotion.
