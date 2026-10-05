@@ -153,11 +153,23 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one):
         if not entries:
             continue
 
+        executable = []
         for candidate in entries:
             engine = candidate["v3_engine"]
             last_signal = last_by_engine.get(engine)
-            if last_signal is not None and signal_end - last_signal < pd.Timedelta(hours=BACKTEST_COOLDOWN_HOURS):
-                continue
+            if last_signal is None or signal_end - last_signal >= pd.Timedelta(hours=BACKTEST_COOLDOWN_HOURS):
+                executable.append(candidate)
+        if not executable:
+            continue
+
+        primary_engine = max(
+            executable,
+            key=lambda x: (float(x.get("v3_score") or 0.0), -float(x.get("v3_projected_cost_r") or 0.0)),
+        )["v3_engine"]
+
+        for candidate in executable:
+            engine = candidate["v3_engine"]
+            candidate["v3_primary"] = engine == primary_engine
 
             entry = float(candidate["entry"])
             stop = float(candidate["stop"])
