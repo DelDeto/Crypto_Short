@@ -509,6 +509,11 @@ def run_backtest(symbols=None, days=None):
         trade for trade in core_trades
         if trade.get("v21_status") == "ENTRY_READY"
     ]
+    v22_entry_trades = [
+        trade for trade in trades
+        if trade.get("strategy_family") == "V22_CORE"
+        and trade.get("v22_status") == "ENTRY_READY"
+    ]
     baseline_trades = [
         trade for trade in trades
         if trade.get("strategy_family") == "BOLLINGER_BASELINE"
@@ -516,6 +521,7 @@ def run_backtest(symbols=None, days=None):
 
     equity = equity_curve_metrics(core_trades)
     v21_equity = equity_curve_metrics(v21_entry_trades)
+    v22_equity = equity_curve_metrics(v22_entry_trades)
     baseline_equity = equity_curve_metrics(baseline_trades)
 
     return {
@@ -543,6 +549,7 @@ def run_backtest(symbols=None, days=None):
         "calibration": calibration,
         "equity_sequence": equity,
         "v21_equity_sequence": v21_equity,
+        "v22_equity_sequence": v22_equity,
         "baseline_equity_sequence": baseline_equity,
         "trades": trades,
         "errors": errors,
