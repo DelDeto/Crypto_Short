@@ -5,6 +5,7 @@ V2.2 remains research-only. It does not alter the V1 live scanner.
 
 import math
 
+from .config import V22_ENTRY_SCORE
 from .indicators import atr, bearish_rejection, ema, return_pct, structure_snapshot, volume_ratio
 
 
@@ -232,7 +233,7 @@ def score_v22(result, one_hour, fifteen_minute, btc_one=None):
     ) or rejection_1h or bb["failed_upper"]
 
     entry_ready = bool(
-        score >= 70
+        score >= V22_ENTRY_SCORE
         and context_ok
         and confirmation_ok
         and location_ok
