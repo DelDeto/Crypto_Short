@@ -16,6 +16,7 @@ from .config import (
     BACKTEST_SHARD_COUNT,
     BACKTEST_FEE_BPS_ROUND_TRIP,
     BACKTEST_SLIPPAGE_BPS_ROUND_TRIP,
+    V22_ENTRY_SCORE,
 )
 from .indicators import return_pct
 from .baselines import bollinger_reversal_short
@@ -545,6 +546,9 @@ def run_backtest(symbols=None, days=None):
             "terminal_exit": f"close at {BACKTEST_HORIZON_HOURS}h if neither TP1 nor SL hits",
             "fee_bps_round_trip": BACKTEST_FEE_BPS_ROUND_TRIP,
             "slippage_bps_round_trip": BACKTEST_SLIPPAGE_BPS_ROUND_TRIP,
+            "v22_entry_score": V22_ENTRY_SCORE,
+            "v22_context_timeframes": "4H/1H",
+            "v22_trigger_timeframe": "15M",
         },
         "calibration": calibration,
         "equity_sequence": equity,
