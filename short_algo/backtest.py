@@ -74,13 +74,14 @@ def _apply_shard(selected, meta):
 
 
 def _select_symbols(symbols=None):
-    universe = get_contract_universe()
+    universe, universe_audit = get_contract_universe(return_audit=True)
     if symbols:
         wanted = {str(s).strip().upper() for s in symbols if str(s).strip()}
         selected = [s for s in universe if s.upper() in wanted]
         return _apply_shard(selected, {
             "selection": "explicit",
             "universe_count": len(universe),
+            "universe_audit": universe_audit,
         })
 
     tickers = get_all_tickers()
@@ -93,11 +94,12 @@ def _select_symbols(symbols=None):
         ranked = ranked[:BACKTEST_SYMBOL_LIMIT]
 
     return _apply_shard(ranked, {
-        "selection": "current_turnover_rank",
+        "selection": "current_turnover_rank_crypto_only",
         "universe_count": len(universe),
+        "universe_audit": universe_audit,
         "symbol_limit": BACKTEST_SYMBOL_LIMIT,
         "bias_note": (
-            "Universe uses currently tradable contracts and current turnover only "
+            "Universe is restricted to crypto-only contracts. Current turnover is used only "
             "for sample selection. Historical signal scoring does not use today's "
             "turnover/funding/spread."
         ),
@@ -526,7 +528,7 @@ def run_backtest(symbols=None, days=None):
     baseline_equity = equity_curve_metrics(baseline_trades)
 
     return {
-        "engine": "Crypto Short Scanner V2.2 Backtest",
+        "engine": "Crypto Short Scanner V2.2.1 Validation",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "period_start": period_start.isoformat(),
         "period_end": period_end.isoformat(),
