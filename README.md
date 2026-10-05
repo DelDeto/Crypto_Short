@@ -236,3 +236,94 @@ The validation changes are methodological:
 
 The goal is to determine whether the positive V2.2 result survives a cleaner,
 larger and time-separated sample before any live promotion.
+
+
+## V3 — Multi-Strategy Short Engine
+
+V3 is a clean research architecture rather than an incremental V2 score tweak.
+It remains separate from the live V1 scanner until historical validation is
+strong enough to justify promotion.
+
+### Market Router
+
+V3 uses timestamp-aligned BTC and ETH 1H context to classify the market as:
+
+- **RISK_ON**
+- **NEUTRAL**
+- **RISK_OFF**
+
+Each Short engine has its own regime permissions. An extreme pump reversal can
+still qualify during strong markets only when its own confirmation is strong;
+trend-continuation Shorts require a genuine risk-off environment.
+
+### Five independent Short engines
+
+1. **EXTREME_PUMP_REVERSAL**
+   - strong 24h pump;
+   - ATR/Bollinger/VWAP extension;
+   - buy-side liquidity sweep;
+   - 15m failed reclaim and bearish micro structure.
+
+2. **EXHAUSTION_REVERSAL**
+   - moderate upside move;
+   - multi-factor exhaustion from rejection, failed Bollinger extension,
+     volume expansion and VWAP extension;
+   - 15m failed reclaim.
+
+3. **BREAKDOWN_RETEST**
+   - risk-off BTC/ETH environment;
+   - bearish 4H/1H structure;
+   - 1H breakdown plus retest;
+   - 15m bearish confirmation.
+
+4. **RELATIVE_WEAKNESS**
+   - coin underperforms BTC/ETH on 4h and 24h;
+   - bearish local structure;
+   - avoids chasing assets that have already collapsed too far.
+
+5. **FAILED_BREAKOUT_SUPPLY_FADE**
+   - fresh failed breakout / buy-side sweep;
+   - supply or failed Bollinger extension location;
+   - 15m failed reclaim;
+   - excludes extreme-pump context so it does not duplicate Engine A.
+
+### V3 execution gates
+
+Before ENTRY_READY, V3 requires:
+
+- model-specific hard gate;
+- max stop percent;
+- minimum support room;
+- projected execution cost below the configured R budget.
+
+The default cost cap is **0.10R** using the same fee + slippage assumptions as
+the backtest. A setup with an attractive chart but a stop so tight that costs
+consume too much of its R is rejected.
+
+### Portfolio layer
+
+After all shards merge, V3:
+
+- chooses one primary engine per symbol/timestamp;
+- ranks by model score adjusted for execution cost;
+- selects at most 3 setups per timestamp;
+- limits total concurrent positions;
+- limits known correlated clusters such as meme, AI, L1 and DeFi;
+- simulates a default 0.5% equity risk per trade.
+
+### Validation
+
+The default manual V3 backtest is:
+
+- 360 days;
+- 120 liquid crypto contracts;
+- 72-hour outcome horizon;
+- 8 parallel shards.
+
+The report separates net-profitable rate from TP-before-SL rate and includes
+engine, regime, score/cost behavior, portfolio drawdown and temporal robustness.
+The older half of a 360-day run is treated as a retrospective holdout because
+the V3 rules were inspired by findings from the more recent V2.2.1 period.
+
+Historical OI/funding is intentionally disabled until timestamp-correct data is
+available. V3 does not substitute current OI/funding into historical signals.
