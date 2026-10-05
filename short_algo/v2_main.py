@@ -14,13 +14,14 @@ def _write_json(path, payload):
 
 def _write_trades_csv(path, trades):
     fields = [
-        "symbol", "signal_time", "strategy_family", "model",
+        "symbol", "signal_time", "exit_time", "strategy_family", "model",
         "top_gainer_context", "status", "v21_status", "v21_priority",
-        "score", "return_24h_pct", "entry", "stop", "stop_pct", "tp1",
+        "v22_status", "v22_priority", "v22_score", "v22_ranked",
+        "v22_market_rank", "score", "return_24h_pct", "entry", "stop", "stop_pct", "tp1",
         "tp2", "runner", "support_room_r", "supply_distance_atr",
         "outcome", "gross_r", "cost_r", "realized_r", "terminal_close",
-        "mae_r", "mfe_r", "bars_to_outcome", "ambiguous_same_bar",
-        "tp2_touched", "runner_touched",
+        "mae_r", "mfe_r", "bars_to_outcome", "outcome_bar_minutes",
+        "ambiguous_same_bar", "tp2_touched", "runner_touched",
     ]
     with open(path, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
@@ -42,13 +43,20 @@ def _summary_markdown(report):
     v21_entry_ready = cal.get("v21_entry_ready") or {}
     liquidity = cal.get("liquidity_reversal") or {}
     liquidity_top = cal.get("liquidity_reversal_top_gainer") or {}
+    v22_entry = cal.get("v22_entry_ready") or {}
+    v22_top = cal.get("v22_top_gainer_entry_ready") or {}
+    v22_ranked = cal.get("v22_ranked_portfolio") or {}
     baseline = cal.get("bollinger_baseline") or {}
     equity = report.get("equity_sequence") or {}
     v21_equity = report.get("v21_equity_sequence") or {}
+    v22_equity = report.get("v22_equity_sequence") or {}
+    v22_ranked_equity = report.get("v22_ranked_equity_sequence") or {}
+    portfolio = report.get("v22_portfolio") or {}
+    walk_forward = report.get("v22_walk_forward") or {}
     baseline_equity = report.get("baseline_equity_sequence") or {}
 
     lines = [
-        "# Crypto Short Scanner V2.1 — Backtest & Calibration",
+        "# Crypto Short Scanner V2.2 — Backtest & Calibration",
         "",
         f"- Period: {report.get('period_start')} → {report.get('period_end')}",
         f"- Days: {report.get('days')}",
@@ -77,6 +85,28 @@ def _summary_markdown(report):
         "### Liquidity Reversal focus",
         f"- All Liquidity Reversal expectancy: {_fmt(liquidity.get('expectancy_r'), 3)}R | PF {_fmt(liquidity.get('profit_factor'), 3)}",
         f"- Top-gainer Liquidity Reversal expectancy: {_fmt(liquidity_top.get('expectancy_r'), 3)}R | PF {_fmt(liquidity_top.get('profit_factor'), 3)}",
+        "",
+        "### V2.2 reversal gate",
+        f"- V2.2 ENTRY_READY signals: {v22_entry.get('signals', 0)}",
+        f"- V2.2 ENTRY_READY win rate: {_fmt(v22_entry.get('win_rate_pct'))}%",
+        f"- V2.2 ENTRY_READY expectancy: {_fmt(v22_entry.get('expectancy_r'), 3)}R",
+        f"- V2.2 ENTRY_READY PF: {_fmt(v22_entry.get('profit_factor'), 3)}",
+        f"- V2.2 raw net sequence: {_fmt(v22_equity.get('net_r'), 2)}R",
+        f"- V2.2 top-gainer expectancy: {_fmt(v22_top.get('expectancy_r'), 3)}R | PF {_fmt(v22_top.get('profit_factor'), 3)}",
+        "",
+        "### V2.2 ranked portfolio",
+        f"- Ranked trades: {v22_ranked.get('signals', 0)}",
+        f"- Ranked win rate: {_fmt(v22_ranked.get('win_rate_pct'))}%",
+        f"- Ranked expectancy: {_fmt(v22_ranked.get('expectancy_r'), 3)}R",
+        f"- Ranked PF: {_fmt(v22_ranked.get('profit_factor'), 3)}",
+        f"- Ranked net R: {_fmt(v22_ranked_equity.get('net_r'), 2)}R",
+        f"- Ranked max drawdown: {_fmt(v22_ranked_equity.get('max_drawdown_r'), 2)}R",
+        f"- Portfolio start: {_fmt(portfolio.get('starting_equity'), 2)}",
+        f"- Portfolio end: {_fmt(portfolio.get('ending_equity'), 2)}",
+        f"- Portfolio return: {_fmt(portfolio.get('return_pct'), 2)}%",
+        f"- Portfolio max DD: {_fmt(portfolio.get('max_drawdown_pct'), 2)}%",
+        f"- Walk-forward test signals: {walk_forward.get('aggregate_test_signals', 0)}",
+        f"- Walk-forward test expectancy: {_fmt(walk_forward.get('aggregate_test_expectancy_r'), 3)}R",
         "",
         "### Bollinger baseline",
         f"- Baseline signals: {baseline.get('signals', 0)}",
@@ -131,9 +161,31 @@ def _summary_markdown(report):
 
     lines += [
         "",
+        "## V2.2 score calibration",
+        "",
+        "| V2.2 score | Signals | Win % | Expectancy R | PF |",
+        "|---|---:|---:|---:|---:|",
+    ]
+
+    for score_bin, stats in (cal.get("by_v22_score_bin") or {}).items():
+        lines.append(
+            "| " + " | ".join([
+                str(score_bin),
+                str(stats.get("signals", 0)),
+                _fmt(stats.get("win_rate_pct")),
+                _fmt(stats.get("expectancy_r"), 3),
+                _fmt(stats.get("profit_factor"), 3),
+            ]) + " |"
+        )
+
+    lines += [
+        "",
         "## Method notes",
         "",
-        "- No future 1H candle is used to build a signal.",
+        "- No future candle is used to build a signal.",
+        "- V2.2 uses 4H/1H for context and fully closed 15m candles for entry confirmation.",
+        "- V2.2 adds ATR/Bollinger/VWAP overextension and a timestamp-aligned BTC risk-on filter.",
+        "- Whole-market ranking is applied only after all shards merge; max concurrent positions are enforced in portfolio simulation.",
         "- 4H candles must be fully closed before the 1H signal timestamp.",
         "- Primary bracket outcome remains +2R before -1R.",
         "- If neither TP1 nor SL hits within the configured horizon, the trade exits at the final horizon close.",
@@ -166,6 +218,8 @@ def main():
     calibration = report.get("calibration") or {}
     overall = calibration.get("overall") or {}
     v21_entry_ready = calibration.get("v21_entry_ready") or {}
+    v22_entry_ready = calibration.get("v22_entry_ready") or {}
+    v22_ranked = calibration.get("v22_ranked_portfolio") or {}
     baseline = calibration.get("bollinger_baseline") or {}
     print(json.dumps({
         "period_start": report.get("period_start"),
@@ -177,9 +231,15 @@ def main():
         "expectancy_r": overall.get("expectancy_r"),
         "profit_factor": overall.get("profit_factor"),
         "v21_entry_ready": v21_entry_ready,
+        "v22_entry_ready": v22_entry_ready,
+        "v22_ranked_portfolio": v22_ranked,
+        "v22_portfolio": report.get("v22_portfolio"),
+        "v22_walk_forward": report.get("v22_walk_forward"),
         "bollinger_baseline": baseline,
         "equity_sequence": report.get("equity_sequence"),
         "v21_equity_sequence": report.get("v21_equity_sequence"),
+        "v22_equity_sequence": report.get("v22_equity_sequence"),
+        "v22_ranked_equity_sequence": report.get("v22_ranked_equity_sequence"),
         "baseline_equity_sequence": report.get("baseline_equity_sequence"),
         "by_model": calibration.get("by_model"),
         "errors": len(report.get("errors") or []),
