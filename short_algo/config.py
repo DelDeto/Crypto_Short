@@ -62,3 +62,14 @@ V22_PORTFOLIO_RISK_PCT = float(os.getenv("V22_PORTFOLIO_RISK_PCT", "0.5"))
 V22_STARTING_EQUITY = float(os.getenv("V22_STARTING_EQUITY", "10000"))
 V22_WALK_FORWARD_TRAIN_DAYS = int(os.getenv("V22_WALK_FORWARD_TRAIN_DAYS", "60"))
 V22_WALK_FORWARD_TEST_DAYS = int(os.getenv("V22_WALK_FORWARD_TEST_DAYS", "30"))
+
+
+# V3 multi-strategy research defaults. V3 is isolated from the live V1 gate.
+V3_MAX_COST_R = float(os.getenv("V3_MAX_COST_R", "0.10"))
+V3_MAX_STOP_PCT = float(os.getenv("V3_MAX_STOP_PCT", "6.0"))
+V3_MIN_SUPPORT_ROOM_R = float(os.getenv("V3_MIN_SUPPORT_ROOM_R", "2.0"))
+V3_MAX_PER_TIMESTAMP = int(os.getenv("V3_MAX_PER_TIMESTAMP", "3"))
+V3_MAX_CONCURRENT = int(os.getenv("V3_MAX_CONCURRENT", "3"))
+V3_MAX_PER_CLUSTER = int(os.getenv("V3_MAX_PER_CLUSTER", "1"))
+V3_PORTFOLIO_RISK_PCT = float(os.getenv("V3_PORTFOLIO_RISK_PCT", "0.5"))
+V3_STARTING_EQUITY = float(os.getenv("V3_STARTING_EQUITY", "10000"))
