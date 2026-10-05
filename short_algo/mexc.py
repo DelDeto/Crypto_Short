@@ -59,10 +59,53 @@ def _get_json(path, params=None, timeout=15, retries=4):
     raise RuntimeError(f"MEXC request failed {path}: {last_error}")
 
 
-def get_contract_universe():
+# Non-crypto contracts can coexist with crypto perpetuals in the MEXC
+# catalogue. This deny-list is asset-type hygiene only; it is deliberately
+# independent from historical performance so the backtest filter cannot
+# cherry-pick winners/losers.
+_NON_CRYPTO_BASES = {
+    # Equity indices / index trackers
+    "NAS100", "SPX500", "US30", "DJ30", "DOW", "US500", "US100",
+    "HK50", "GER40", "DE40", "UK100", "JP225", "AUS200", "EU50",
+    "FRA40", "CHINA50",
+    # ETFs / leveraged ETFs
+    "SPY", "QQQ", "DIA", "IWM", "SOXL", "SOXS", "TQQQ", "SQQQ",
+    # Commodities / FX-style synthetic underlyings
+    "XAU", "XAG", "GOLD", "SILVER", "UKOIL", "USOIL", "WTI", "BRENT",
+    "NGAS", "COPPER",
+    # Commodity-backed tokens are excluded from this pure-crypto cohort
+    "XAUT", "PAXG",
+    # Common single-stock synthetics seen on derivatives venues
+    "NVIDIA", "NVDA", "TSLA", "AAPL", "AMZN", "MSFT", "META", "GOOG",
+    "GOOGL", "NFLX", "AMD", "COIN", "MSTR", "SMCI", "PLTR", "HOOD",
+    "BABA",
+}
+
+
+def _contract_base(symbol):
+    upper = str(symbol or "").upper()
+    if upper.endswith("_" + QUOTE_COIN):
+        return upper[:-(len(QUOTE_COIN) + 1)]
+    return upper.split("_", 1)[0]
+
+
+def _is_crypto_contract(symbol):
+    upper = str(symbol or "").upper()
+    base = _contract_base(upper)
+    if "STOCK" in upper:
+        return False
+    if base in _NON_CRYPTO_BASES:
+        return False
+    return True
+
+
+def get_contract_universe(return_audit=False):
     payload = _get_json("/api/v1/contract/detail")
     rows = payload.get("data", []) if isinstance(payload, dict) else []
     symbols = []
+    excluded_non_crypto = []
+    active_usdt = 0
+
     for row in rows:
         symbol = row.get("symbol")
         quote = row.get("quoteCoin") or row.get("settleCoin") or ""
@@ -72,15 +115,24 @@ def get_contract_universe():
         if state in (2, 3, 4, "2", "3", "4"):
             continue
 
-        # Crypto-only hygiene: MEXC may list tokenized stock-style contracts
-        # in the same USDT perpetual catalogue. Keep this scanner focused on
-        # crypto assets rather than synthetic equity tickers.
-        upper_symbol = str(symbol).upper()
-        if "STOCK" in upper_symbol:
+        active_usdt += 1
+        if not _is_crypto_contract(symbol):
+            excluded_non_crypto.append(str(symbol))
             continue
 
         symbols.append(symbol)
-    return sorted(set(symbols))
+
+    symbols = sorted(set(symbols))
+    audit = {
+        "active_usdt_contracts": active_usdt,
+        "crypto_contracts": len(symbols),
+        "excluded_non_crypto_count": len(set(excluded_non_crypto)),
+        "excluded_non_crypto_symbols": sorted(set(excluded_non_crypto)),
+        "filter_basis": "asset-type deny-list only; no performance-based filtering",
+    }
+    if return_audit:
+        return symbols, audit
+    return symbols
 
 
 def _float(row, *keys):
