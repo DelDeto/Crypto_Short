@@ -157,3 +157,61 @@ automatically replace the live V1 Telegram gate.
 Default research cost assumptions are 8 bps round-trip fees plus 6 bps
 round-trip slippage. They are configurable workflow inputs and are not claims
 about any specific exchange fee tier.
+
+
+## V2.2 — Ranked liquidity reversal
+
+V2.2 is the next research layer after V2.1. It remains isolated from the live
+V1 Telegram execution gate until historical validation is complete.
+
+### V2.2 architecture
+
+- **4H / 1H context** remains the macro setup layer.
+- **15m confirmation** is used for timing and a tighter research stop.
+- A dedicated **V2.2 Reversal Score** replaces the old assumption that a higher
+  global bearish score is automatically a better reversal setup.
+- The reversal score includes:
+  - 24h pump magnitude;
+  - ATR extension from EMA20;
+  - Bollinger z-score / failed upper-band extension;
+  - rolling VWAP extension;
+  - buy-side liquidity sweep and supply proximity;
+  - 1H bearish exhaustion / rejection / volume expansion;
+  - 15m lower-high, lower-low, breakdown and rejection confirmation;
+  - timestamp-aligned BTC risk-on / neutral-bearish regime.
+- V2.2 uses a separate 15m execution plan with +2R TP1, +3R TP2 and a 5R
+  research runner.
+- Whole-market ranking happens **after all shards merge**, so signals from
+  different shards are compared against one another before portfolio selection.
+- Default portfolio constraints:
+  - top 3 setups per timestamp;
+  - max 3 concurrent positions;
+  - 0.5% equity risk per ranked trade;
+  - starting research equity 10,000.
+- A walk-forward threshold report uses a default 60-day training window and
+  30-day test window to test whether the score threshold remains useful over
+  time.
+- V2.1 and the Bollinger mean-reversion baseline remain in the report for
+  apples-to-apples comparison.
+
+### V2.2 workflow controls
+
+Manual workflow inputs include:
+
+- historical days;
+- symbol limit;
+- outcome horizon;
+- round-trip fee assumption;
+- round-trip slippage assumption;
+- V2.2 ENTRY_READY score threshold;
+- max concurrent positions;
+- portfolio risk percent per trade.
+
+The merged artifact is:
+
+`Crypto-Short-V22-Backtest-Final`
+
+V2.2 should not replace the live scanner solely because one in-sample run is
+positive. Promotion should require a materially positive expectancy after costs,
+a reasonable profit factor and drawdown, sufficient sample size, and positive
+walk-forward behavior.
