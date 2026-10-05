@@ -20,7 +20,13 @@ from .config import (
 from .indicators import return_pct
 from .baselines import bollinger_reversal_short
 from .v21 import classify_v21_status
-from .mexc import fetch_backtest_frames, get_all_tickers, get_contract_universe
+from .v22 import score_v22
+from .mexc import (
+    fetch_backtest_frames,
+    get_all_tickers,
+    get_contract_universe,
+    get_klines_window,
+)
 from .models import classify_short_model
 from .strategy import analyze_short
 
@@ -97,7 +103,9 @@ def _select_symbols(symbols=None):
     })
 
 
-def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
+def _evaluate_outcome(
+    entry, stop, tp1, tp2, runner, future, horizon_hours, bars_per_hour=1
+):
     risk = float(stop) - float(entry)
     if risk <= 0:
         return {
@@ -114,7 +122,8 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
         }
 
     horizon = max(1, int(horizon_hours))
-    future = future.head(horizon)
+    bars_per_hour = max(1, int(bars_per_hour))
+    future = future.head(horizon * bars_per_hour)
     total_cost_bps = (
         float(BACKTEST_FEE_BPS_ROUND_TRIP)
         + float(BACKTEST_SLIPPAGE_BPS_ROUND_TRIP)
@@ -212,14 +221,17 @@ def _evaluate_outcome(entry, stop, tp1, tp2, runner, future, horizon_hours):
         "runner_touched": runner_touched,
     }
 
-def _replay_symbol(symbol, frames, period_start, period_end):
+def _replay_symbol(symbol, frames, period_start, period_end, btc_one=None):
+    fifteen = frames.get("15M")
     one = frames.get("1H")
     four = frames.get("4H")
     if one is None or four is None or one.empty or four.empty:
         return [], {"symbol": symbol, "error": "missing historical frames"}
 
+    fifteen = None if fifteen is None or fifteen.empty else fifteen.sort_index()
     one = one.sort_index()
     four = four.sort_index()
+    btc_one = None if btc_one is None or btc_one.empty else btc_one.sort_index()
     trades = []
     last_signal_by_model = {}
 
@@ -245,6 +257,16 @@ def _replay_symbol(symbol, frames, period_start, period_end):
 
         one_slice = one.iloc[:pos + 1]
         four_closed = four.loc[(four.index + pd.Timedelta(hours=4)) <= signal_end]
+        fifteen_closed = None
+        if fifteen is not None:
+            fifteen_closed = fifteen.loc[
+                (fifteen.index + pd.Timedelta(minutes=15)) <= signal_end
+            ].tail(180)
+        btc_closed = None
+        if btc_one is not None:
+            btc_closed = btc_one.loc[
+                (btc_one.index + pd.Timedelta(hours=1)) <= signal_end
+            ].tail(180)
         if len(four_closed) < 90:
             continue
 
@@ -289,16 +311,81 @@ def _replay_symbol(symbol, frames, period_start, period_end):
             continue
 
         score = float(result.get("score") or 0.0)
-        if score < BACKTEST_MIN_SCORE:
-            continue
-        if result.get("status") not in ("WATCH", "DEVELOPING", "ENTRY_READY"):
-            continue
-
         ret24 = return_pct(one_slice["close"], 24)
         model_info = classify_short_model(result, return_24h_pct=ret24)
         result.update(model_info)
         result.update(classify_v21_status(result))
+        result.update(score_v22(result, one_slice, fifteen_closed, btc_closed))
         model = model_info["model"]
+
+        # V2.2 is evaluated independently from the legacy V1/V2.1 score gate.
+        if result.get("v22_status") in ("DEVELOPING", "ENTRY_READY") and fifteen_closed is not None:
+            v22_key = "V22_LIQUIDITY_REVERSAL"
+            last_v22 = last_signal_by_model.get(v22_key)
+            v22_allowed = (
+                last_v22 is None
+                or signal_end - last_v22 >= pd.Timedelta(hours=BACKTEST_COOLDOWN_HOURS)
+            )
+            if v22_allowed:
+                v22_entry = float(result["v22_entry"])
+                v22_stop = float(result["v22_stop"])
+                v22_tp1 = float(result["v22_tp1"])
+                v22_tp2 = float(result["v22_tp2"])
+                v22_runner = float(result["v22_runner"])
+                future15 = fifteen.loc[fifteen.index >= signal_end]
+                v22_outcome = _evaluate_outcome(
+                    v22_entry,
+                    v22_stop,
+                    v22_tp1,
+                    v22_tp2,
+                    v22_runner,
+                    future15,
+                    BACKTEST_HORIZON_HOURS,
+                    bars_per_hour=4,
+                )
+                bars15 = int(v22_outcome.get("bars_to_outcome") or 0)
+                v22_exit_time = (
+                    signal_end + pd.Timedelta(minutes=15 * bars15)
+                    if bars15 > 0 else None
+                )
+                trades.append({
+                    "symbol": symbol,
+                    "signal_time": signal_end.isoformat(),
+                    "exit_time": None if v22_exit_time is None else v22_exit_time.isoformat(),
+                    "strategy_family": "V22_CORE",
+                    "status": result.get("status"),
+                    "v21_status": result.get("v21_status"),
+                    "v22_status": result.get("v22_status"),
+                    "v22_priority": result.get("v22_priority"),
+                    "v22_score": result.get("v22_score"),
+                    "v22_components": result.get("v22_components"),
+                    "v22_features": result.get("v22_features"),
+                    "v22_gate": result.get("v22_gate"),
+                    "score": round(score, 2),
+                    "model": model,
+                    "model_flags": model_info.get("model_flags"),
+                    "top_gainer_context": model_info.get("top_gainer_context"),
+                    "return_24h_pct": model_info.get("return_24h_pct"),
+                    "entry": v22_entry,
+                    "stop": v22_stop,
+                    "stop_pct": result.get("v22_stop_pct"),
+                    "tp1": v22_tp1,
+                    "tp2": v22_tp2,
+                    "runner": v22_runner,
+                    "support_room_r": result.get("v22_support_room_r"),
+                    "supply_distance_atr": result.get("supply_distance_atr"),
+                    "atr_pct_1h": result.get("atr_pct_1h"),
+                    "reasons": result.get("reasons"),
+                    "filters": result.get("filters"),
+                    "outcome_bar_minutes": 15,
+                    **v22_outcome,
+                })
+                last_signal_by_model[v22_key] = signal_end
+
+        if score < BACKTEST_MIN_SCORE:
+            continue
+        if result.get("status") not in ("WATCH", "DEVELOPING", "ENTRY_READY"):
+            continue
 
         last_signal = last_signal_by_model.get(model)
         if last_signal is not None:
@@ -327,9 +414,13 @@ def _replay_symbol(symbol, frames, period_start, period_end):
             BACKTEST_HORIZON_HOURS,
         )
 
+        bars1h = int(outcome.get("bars_to_outcome") or 0)
+        exit_time = signal_end + pd.Timedelta(hours=bars1h) if bars1h > 0 else None
+
         trade = {
             "symbol": symbol,
             "signal_time": signal_end.isoformat(),
+            "exit_time": None if exit_time is None else exit_time.isoformat(),
             "strategy_family": "V21_CORE",
             "status": result.get("status"),
             "v21_status": result.get("v21_status"),
@@ -351,6 +442,7 @@ def _replay_symbol(symbol, frames, period_start, period_end):
             "atr_pct_1h": result.get("atr_pct_1h"),
             "reasons": result.get("reasons"),
             "filters": result.get("filters"),
+            "outcome_bar_minutes": 60,
             **outcome,
         }
         trades.append(trade)
@@ -371,6 +463,13 @@ def run_backtest(symbols=None, days=None):
     trades = []
     errors = []
 
+    btc_one = None
+    try:
+        warmup_start = period_start - timedelta(days=BACKTEST_WARMUP_DAYS)
+        btc_one = get_klines_window("BTC_USDT", "1h", warmup_start, period_end)
+    except Exception as exc:
+        errors.append({"symbol": "BTC_USDT", "error": f"market regime context: {exc}"})
+
     for index, symbol in enumerate(selected, start=1):
         try:
             frames = fetch_backtest_frames(
@@ -384,6 +483,7 @@ def run_backtest(symbols=None, days=None):
                 frames,
                 period_start,
                 period_end,
+                btc_one=btc_one,
             )
             trades.extend(symbol_trades)
             if error:
@@ -403,7 +503,7 @@ def run_backtest(symbols=None, days=None):
 
     core_trades = [
         trade for trade in trades
-        if trade.get("strategy_family", "V21_CORE") != "BOLLINGER_BASELINE"
+        if trade.get("strategy_family") == "V21_CORE"
     ]
     v21_entry_trades = [
         trade for trade in core_trades
@@ -419,7 +519,7 @@ def run_backtest(symbols=None, days=None):
     baseline_equity = equity_curve_metrics(baseline_trades)
 
     return {
-        "engine": "Crypto Short Scanner V2.1 Backtest",
+        "engine": "Crypto Short Scanner V2.2 Backtest",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "period_start": period_start.isoformat(),
         "period_end": period_end.isoformat(),
