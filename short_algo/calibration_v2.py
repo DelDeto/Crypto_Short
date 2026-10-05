@@ -215,7 +215,7 @@ def equity_curve_metrics(trades):
         equity += float(trade.get("realized_r") or 0)
         peak = max(peak, equity)
         max_drawdown = max(max_drawdown, peak - equity)
-        if trade.get("outcome") == "LOSS":
+        if float(trade.get("realized_r") or 0.0) <= 0.0:
             current_loss_streak += 1
             longest_loss_streak = max(longest_loss_streak, current_loss_streak)
         else:
