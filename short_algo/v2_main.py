@@ -54,13 +54,18 @@ def _summary_markdown(report):
     portfolio = report.get("v22_portfolio") or {}
     walk_forward = report.get("v22_walk_forward") or {}
     baseline_equity = report.get("baseline_equity_sequence") or {}
+    universe_audit = ((report.get("selection_meta") or {}).get("universe_audit") or {})
+    excluded_non_crypto = universe_audit.get("excluded_non_crypto_symbols") or []
 
     lines = [
-        "# Crypto Short Scanner V2.2 — Backtest & Calibration",
+        "# Crypto Short Scanner V2.2.1 — Crypto-only Validation",
         "",
         f"- Period: {report.get('period_start')} → {report.get('period_end')}",
         f"- Days: {report.get('days')}",
         f"- Symbols: {report.get('selected_symbol_count')}",
+        f"- Crypto contracts available: {universe_audit.get('crypto_contracts', '-')}",
+        f"- Non-crypto contracts excluded: {universe_audit.get('excluded_non_crypto_count', 0)}",
+        f"- Excluded non-crypto symbols: {', '.join(excluded_non_crypto) if excluded_non_crypto else '-'}",
         "### Research candidates (WATCH+)",
         f"- Candidate signals: {overall.get('signals', 0)}",
         f"- Resolved candidates: {overall.get('resolved', 0)}",
@@ -183,8 +188,10 @@ def _summary_markdown(report):
         "## Method notes",
         "",
         "- No future candle is used to build a signal.",
+        "- V2.2.1 keeps V2.2 strategy logic unchanged and validates it on a crypto-only contract cohort.",
         "- V2.2 uses 4H/1H for context and fully closed 15m candles for entry confirmation.",
         "- V2.2 adds ATR/Bollinger/VWAP overextension and a timestamp-aligned BTC risk-on filter.",
+        "- Walk-forward varies only the V2.2 score threshold; 15m confirmation, location, risk and BTC-regime hard gates remain fixed.",
         "- Whole-market ranking is applied only after all shards merge; max concurrent positions are enforced in portfolio simulation.",
         "- 4H candles must be fully closed before the 1H signal timestamp.",
         "- Primary bracket outcome remains +2R before -1R.",
