@@ -123,7 +123,7 @@ def merge_reports(shards):
     }
 
     return {
-        "engine": "Crypto Short Scanner V2.2 Parallel Backtest",
+        "engine": "Crypto Short Scanner V2.2.1 Parallel Validation",
         "generated_at": first.get("generated_at"),
         "period_start": min(str(r.get("period_start")) for r in shards),
         "period_end": max(str(r.get("period_end")) for r in shards),
@@ -133,6 +133,7 @@ def merge_reports(shards):
         "selection_meta": {
             "selection": (first.get("selection_meta") or {}).get("selection"),
             "universe_count": (first.get("selection_meta") or {}).get("universe_count"),
+            "universe_audit": (first.get("selection_meta") or {}).get("universe_audit"),
             "symbol_limit": (first.get("selection_meta") or {}).get("symbol_limit"),
             "bias_note": (first.get("selection_meta") or {}).get("bias_note"),
             "parallel_shards_expected": max(
