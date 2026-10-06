@@ -353,13 +353,16 @@ def _confirmation_score(row, prev, zone):
     return score
 
 
-def _rejection(reason, zone=None, **extra):
-    return {
+def _rejection(reason, zone=None, audit=None, **extra):
+    payload = {
         "filled": False,
         "reject_reason": reason,
         "zone_source": None if zone is None else zone.get("source"),
-        **extra,
     }
+    if audit:
+        payload.update(audit)
+    payload.update(extra)
+    return payload
 
 
 def simulate_confirmed_retest(
@@ -390,6 +393,14 @@ def simulate_confirmed_retest(
             ).iterrows()
         ]
 
+    audit = {
+        "audit_zone_touched": False,
+        "audit_bos_confirmed": False,
+        "audit_retest_seen": False,
+        "audit_confirmation_seen": False,
+        "audit_max_confirmation_score": 0,
+    }
+
     state = "WAIT_TOUCH"
     touch_bar = None
     bos_bar = None
@@ -409,6 +420,7 @@ def simulate_confirmed_retest(
             return _rejection(
                 "ZONE_INVALIDATED_AFTER_SIGNAL",
                 zone,
+                audit=audit,
                 state=state,
                 bars_waited=bars,
             )
@@ -420,6 +432,7 @@ def simulate_confirmed_retest(
 
         if state == "WAIT_TOUCH":
             if touched:
+                audit["audit_zone_touched"] = True
                 state = "WAIT_BOS"
                 touch_bar = bars
                 attempt_high = high
@@ -460,6 +473,7 @@ def simulate_confirmed_retest(
                     < float(bos_trigger_level) - V41_BOS_BUFFER_ATR1H * a1
                 )
                 if broke:
+                    audit["audit_bos_confirmed"] = True
                     state = "WAIT_RETEST"
                     bos_bar = bars
                     bos_level = float(bos_trigger_level)
@@ -508,7 +522,12 @@ def simulate_confirmed_retest(
             )
 
             if retested:
+                audit["audit_retest_seen"] = True
                 score = _confirmation_score(row, prev, zone)
+                audit["audit_max_confirmation_score"] = max(
+                    int(audit["audit_max_confirmation_score"]),
+                    int(score),
+                )
                 no_chase = (
                     close
                     >= signal_price - V41_MAX_CHASE_ATR * a1
@@ -524,6 +543,7 @@ def simulate_confirmed_retest(
                     and no_chase
                     and closes_below_break
                 ):
+                    audit["audit_confirmation_seen"] = True
                     entry = close
                     stop_anchor = max(
                         float(zone["upper"]),
@@ -563,12 +583,14 @@ def simulate_confirmed_retest(
                         return _rejection(
                             "UNKNOWN_SUPPORT",
                             zone,
+                            audit=audit,
                             state=state,
                         )
                     if projected_cost_r > V3_MAX_COST_R:
                         return _rejection(
                             "COST_TOO_HIGH",
                             zone,
+                            audit=audit,
                             state=state,
                             projected_cost_r=round(projected_cost_r, 4),
                         )
@@ -576,6 +598,7 @@ def simulate_confirmed_retest(
                         return _rejection(
                             "STOP_TOO_WIDE",
                             zone,
+                            audit=audit,
                             state=state,
                             stop_pct=round(stop_pct, 4),
                         )
@@ -583,11 +606,13 @@ def simulate_confirmed_retest(
                         return _rejection(
                             "SUPPORT_TOO_CLOSE",
                             zone,
+                            audit=audit,
                             state=state,
                             support_room_r=round(support_room_r, 4),
                         )
 
                     return {
+                        **audit,
                         "filled": True,
                         "reject_reason": None,
                         "entry_time": (
@@ -632,6 +657,7 @@ def simulate_confirmed_retest(
     return _rejection(
         last_reason,
         zone,
+        audit=audit,
         state=state,
         bars_waited=len(view),
         bos_level=bos_level,
