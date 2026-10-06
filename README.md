@@ -418,9 +418,9 @@ Manual defaults:
 - 360 historical days;
 - 120 frozen crypto symbols;
 - 72-hour outcome horizon;
-- 16 replay shards;
+- 24 replay shards;
 - 180d train / 30d walk-forward / 60d final holdout.
 
-Push-trigger smoke tests use a much smaller frozen cohort/window and relaxed
+Push-trigger smoke tests use a smaller frozen cohort/window (minimum 24 symbols so every shard receives work) and relaxed
 sample thresholds only to verify pipeline integrity. Smoke performance must not
 be interpreted as V4 trading performance.
