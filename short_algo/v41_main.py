@@ -21,7 +21,7 @@ CSV_FIELDS = [
     "baseline_ft_4h_close_r", "baseline_ft_4h_mfe_r", "baseline_ft_4h_mae_r",
     "baseline_ft_first_0_5r_move",
     "baseline_post_sl_class", "baseline_post_sl_mfe_r",
-    "entry_time", "exit_time", "entry", "stop", "stop_pct", "tp1", "tp2",
+    "entry_time", "exit_time", "entry", "stop", "stop_pct", "projected_cost_r", "tp1", "tp2",
     "support_room_r", "entry_improvement_atr", "confirmation_score",
     "wait_bars_15m", "touch_bar", "bos_bar", "bos_level",
     "structure_sequence", "outcome", "realized_r", "cost_r", "mae_r", "mfe_r",
