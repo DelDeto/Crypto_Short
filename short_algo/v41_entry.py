@@ -318,6 +318,21 @@ def build_short_entry_zone(candidate, base, one):
     return chosen
 
 
+def _recent_micro_swing_low(history):
+    """Freeze the most recent usable 15m swing low at zone touch."""
+    if not history:
+        return None
+
+    lows = [float(row["low"]) for row in history]
+    start = max(1, len(lows) - max(8, V41_BOS_LOOKBACK_BARS))
+    for i in range(len(lows) - 2, start - 1, -1):
+        if lows[i] < lows[i - 1] and lows[i] <= lows[i + 1]:
+            return lows[i]
+
+    tail = lows[-min(4, len(lows)): ]
+    return min(tail) if tail else None
+
+
 def _confirmation_score(row, prev, zone):
     o = float(row["open"])
     h = float(row["high"])
@@ -379,6 +394,7 @@ def simulate_confirmed_retest(
     touch_bar = None
     bos_bar = None
     bos_level = None
+    bos_trigger_level = None
     attempt_high = None
     last_reason = "NO_ZONE_TOUCH"
 
@@ -407,7 +423,8 @@ def simulate_confirmed_retest(
                 state = "WAIT_BOS"
                 touch_bar = bars
                 attempt_high = high
-                last_reason = "NO_BEARISH_BOS"
+                bos_trigger_level = _recent_micro_swing_low(history)
+                last_reason = ("NO_BEARISH_BOS" if bos_trigger_level is not None else "NO_MICRO_SWING_REFERENCE")
             history.append(row)
             continue
 
@@ -422,6 +439,7 @@ def simulate_confirmed_retest(
             ):
                 state = "WAIT_TOUCH"
                 touch_bar = None
+                bos_trigger_level = None
                 attempt_high = None
                 last_reason = "LEFT_ZONE_BEFORE_BOS"
                 history.append(row)
@@ -430,22 +448,21 @@ def simulate_confirmed_retest(
             if touch_bar is not None and bars - touch_bar > V41_BOS_WINDOW_BARS:
                 state = "WAIT_TOUCH"
                 touch_bar = None
+                bos_trigger_level = None
                 attempt_high = None
                 last_reason = "BOS_WINDOW_EXPIRED"
                 history.append(row)
                 continue
 
-            prior = history[-V41_BOS_LOOKBACK_BARS:]
-            if len(prior) >= V41_BOS_LOOKBACK_BARS:
-                prior_low = min(float(x["low"]) for x in prior)
+            if bos_trigger_level is not None:
                 broke = (
                     close
-                    < prior_low - V41_BOS_BUFFER_ATR1H * a1
+                    < float(bos_trigger_level) - V41_BOS_BUFFER_ATR1H * a1
                 )
                 if broke:
                     state = "WAIT_RETEST"
                     bos_bar = bars
-                    bos_level = prior_low
+                    bos_level = float(bos_trigger_level)
                     last_reason = "NO_FAILED_RETEST"
 
             history.append(row)
@@ -459,6 +476,7 @@ def simulate_confirmed_retest(
                 touch_bar = None
                 bos_bar = None
                 bos_level = None
+                bos_trigger_level = None
                 attempt_high = None
                 last_reason = "RETEST_WINDOW_EXPIRED"
                 history.append(row)
@@ -475,6 +493,7 @@ def simulate_confirmed_retest(
                 touch_bar = bars if touched else None
                 bos_bar = None
                 bos_level = None
+                bos_trigger_level = (_recent_micro_swing_low(history) if touched else None)
                 attempt_high = high if touched else None
                 last_reason = "MICRO_BOS_RECLAIMED"
                 history.append(row)
@@ -601,6 +620,7 @@ def simulate_confirmed_retest(
                         "confirmation_score": score,
                         "wait_bars_15m": bars,
                         "bos_level": round(float(bos_level), 12),
+                        "bos_reference_frozen": True,
                         "bos_bar": int(bos_bar or bars),
                         "touch_bar": int(touch_bar or bars),
                         "structure_sequence": "ZONE_TOUCH>BOS>RETEST>CONFIRM",
