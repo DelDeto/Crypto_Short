@@ -64,7 +64,7 @@ jobs:
     timeout-minutes: 10
     env:
       BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '45' }}
-      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '16' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '24' }}
 
     steps:
       - name: Checkout
@@ -96,18 +96,18 @@ jobs:
     name: v4-shard-${{ matrix.shard }}
     needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
     env:
       PYTHONUNBUFFERED: "1"
       BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
       BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
       BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
       BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
-      BACKTEST_SHARD_COUNT: "16"
+      BACKTEST_SHARD_COUNT: "24"
       V4_MANIFEST_PATH: "frozen/v4_manifest.json"
 
     steps:
