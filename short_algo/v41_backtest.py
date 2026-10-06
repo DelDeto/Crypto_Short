@@ -225,6 +225,54 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, m
                 **_prefix("baseline_", baseline_post),
             }
 
+            # Research-only shadow evaluation: once the full
+            # zone->BOS->retest->confirmation sequence exists, evaluate the
+            # hypothetical trade even if execution gates reject it. This lets
+            # us separate signal/entry quality from cost/support constraints.
+            if optimized and optimized.get("execution_candidate"):
+                shadow_entry_ts = pd.Timestamp(optimized["entry_time"])
+                shadow_future = fifteen.loc[fifteen.index >= shadow_entry_ts]
+                shadow_outcome = _evaluate_outcome(
+                    optimized["entry"],
+                    optimized["stop"],
+                    optimized["tp1"],
+                    optimized["tp2"],
+                    optimized["runner"],
+                    shadow_future,
+                    BACKTEST_HORIZON_HOURS,
+                    bars_per_hour=4,
+                )
+                shadow_ft = entry_followthrough(
+                    optimized["entry"],
+                    optimized["risk"],
+                    shadow_future,
+                )
+                shadow_post = {}
+                if shadow_outcome.get("outcome") == "LOSS":
+                    shadow_post = post_stop_reversal(
+                        optimized["entry"],
+                        optimized["stop"],
+                        optimized["tp1"],
+                        shadow_future,
+                        shadow_outcome.get("bars_to_outcome"),
+                    )
+                record.update({
+                    "shadow_execution_candidate": True,
+                    "shadow_entry_time": optimized.get("entry_time"),
+                    "shadow_entry": optimized.get("entry"),
+                    "shadow_stop": optimized.get("stop"),
+                    "shadow_stop_pct": optimized.get("stop_pct"),
+                    "shadow_projected_cost_r": optimized.get("projected_cost_r"),
+                    "shadow_support_room_r": optimized.get("support_room_r"),
+                    "shadow_tp1": optimized.get("tp1"),
+                    "shadow_entry_improvement_atr": optimized.get("entry_improvement_atr"),
+                    **_prefix("shadow_", shadow_outcome),
+                    **_prefix("shadow_", shadow_ft),
+                    **_prefix("shadow_", shadow_post),
+                })
+            else:
+                record["shadow_execution_candidate"] = False
+
             if not optimized_filled:
                 rows.append(record)
                 continue
