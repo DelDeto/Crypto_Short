@@ -327,3 +327,100 @@ the V3 rules were inspired by findings from the more recent V2.2.1 period.
 
 Historical OI/funding is intentionally disabled until timestamp-correct data is
 available. V3 does not substitute current OI/funding into historical signals.
+
+
+## V4 — Probability-driven, regime-aware validation
+
+V4 keeps V1/V2/V3 intact and adds a separate research pipeline. The main
+architectural change is that rule engines generate candidates, while an
+out-of-sample meta-label model decides whether a candidate deserves risk.
+
+### Pipeline
+
+```text
+Frozen universe + period
+        ↓
+V3 independent rule engines generate candidates
+        ↓
+V4 regime router + timestamp-safe feature extraction
+        ↓
+Rolling walk-forward logistic meta-label
+        ↓
+Engine/regime auto-demotion
+        ↓
+Expected-R ENTRY_READY gate
+        ↓
+Expected-R portfolio ranking + cluster/concurrency limits
+        ↓
+Final untouched holdout + promotion gate
+```
+
+### Frozen dataset
+
+Before any shard starts, `v4_prepare.py` creates a manifest containing the
+exact symbol list, `period_start`, and `period_end`. Every shard and rerun
+must consume that manifest. The merge fails if:
+
+- a shard is missing;
+- manifest IDs differ;
+- periods differ;
+- symbols are duplicated, missing, or unexpected.
+
+This prevents the cohort drift that can happen when a rerun re-selects current
+top-turnover symbols.
+
+### Meta-label model
+
+V4 currently uses a deliberately simple pure-numpy regularized logistic model
+as the benchmark. It is trained only on previous resolved rule candidates. The
+candidate rule score is a feature, not the final decision.
+
+The model estimates the probability that a candidate finishes with positive
+net R. Expected R is then estimated from that probability and the training
+window's average realized winner/loss magnitudes after execution costs.
+
+The initial production-style defaults are:
+
+- rolling training: 180 days;
+- walk-forward test: 30 days;
+- embargo: 72 hours;
+- final untouched holdout: 60 days;
+- minimum predicted Expected R: +0.15R;
+- minimum profitable probability: 0.35.
+
+### Auto-demotion
+
+Each training window independently measures the candidate engine and the
+engine×regime combination. A setup remains `SHADOW` unless its training
+sample is sufficient and its historical expectancy/PF remain positive. This
+prevents a formerly profitable engine from continuing to allocate risk after
+its edge decays.
+
+### Portfolio
+
+V4 ranks simultaneous setups by out-of-sample `v4_expected_r`, not by the
+hand-built V3 score. The same concurrency and correlation-cluster limits are
+applied after the meta gate.
+
+### Promotion
+
+V4 is research-only. A passing backtest can only become a
+`SHADOW_LIVE_CANDIDATE`; it is not automatically promoted to capital
+deployment. The final holdout and ranked portfolio must pass the promotion
+checks first, followed by a live shadow-observation period.
+
+### Workflow
+
+`.github/workflows/v4-backtest.yml`
+
+Manual defaults:
+
+- 360 historical days;
+- 120 frozen crypto symbols;
+- 72-hour outcome horizon;
+- 16 replay shards;
+- 180d train / 30d walk-forward / 60d final holdout.
+
+Push-trigger smoke tests use a much smaller frozen cohort/window and relaxed
+sample thresholds only to verify pipeline integrity. Smoke performance must not
+be interpreted as V4 trading performance.
