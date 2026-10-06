@@ -1,0 +1,24 @@
+"""V4.2.1 manual-decision Short filter configuration."""
+
+import os
+
+V421_MIN_WATCH_SCORE = float(os.getenv("V421_MIN_WATCH_SCORE", "48"))
+V421_SHORT_CANDIDATE_SCORE = float(os.getenv("V421_SHORT_CANDIDATE_SCORE", "68"))
+V421_BOTTOM_AVOID_SCORE = float(os.getenv("V421_BOTTOM_AVOID_SCORE", "15"))
+V421_READY_ZONE_DISTANCE_ATR = float(os.getenv("V421_READY_ZONE_DISTANCE_ATR", "0.40"))
+
+V421_SUPPORT_NEAR_ATR = float(os.getenv("V421_SUPPORT_NEAR_ATR", "0.80"))
+V421_SUPPORT_CAUTION_ATR = float(os.getenv("V421_SUPPORT_CAUTION_ATR", "1.25"))
+V421_EMA_EXTENDED_ATR = float(os.getenv("V421_EMA_EXTENDED_ATR", "1.80"))
+V421_EMA_VERY_EXTENDED_ATR = float(os.getenv("V421_EMA_VERY_EXTENDED_ATR", "2.50"))
+V421_RANGE_BOTTOM_PCT = float(os.getenv("V421_RANGE_BOTTOM_PCT", "0.18"))
+
+V421_PULLBACK_EMA_BUFFER_ATR = float(os.getenv("V421_PULLBACK_EMA_BUFFER_ATR", "0.20"))
+V421_REFERENCE_STOP_BUFFER_ATR = float(os.getenv("V421_REFERENCE_STOP_BUFFER_ATR", "0.18"))
+
+# Slippage is advisory only in V4.2.1. It never rejects a candidate.
+V421_SLIPPAGE_BPS_REFERENCE = float(os.getenv("V421_SLIPPAGE_BPS_REFERENCE", "6"))
+
+V421_DIRECTION_HOURS = (1, 4, 12)
+V421_FIRST_MOVE_ATR = float(os.getenv("V421_FIRST_MOVE_ATR", "0.50"))
+V421_FIRST_MOVE_WINDOW_HOURS = int(os.getenv("V421_FIRST_MOVE_WINDOW_HOURS", "12"))
