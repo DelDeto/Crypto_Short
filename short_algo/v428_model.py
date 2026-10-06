@@ -45,10 +45,12 @@ ENTRY_FEATURE_NAMES = [
     "anti_bottom_total","squeeze_risk",
     "zone_supply_1h","zone_supply_4h","zone_broken_support","zone_sweep_retest",
     "v428_entry_zone_distance_atr","v428_confirm_support_room_r",
-    "v428_strong_zone","v428_zone_touched_recent",
-    "v428_bearish_rejection_now","v428_no_reclaim_after_touch",
+    "v428_strong_zone","v428_zone_touched_recent","v428_zone_touch_age_1h",
+    "v428_bearish_rejection_now","v428_rejection_upper_wick_ratio",
+    "v428_rejection_close_position","v428_no_reclaim_after_touch",
     "v428_micro_turn_down","v428_close_below_zone_mid",
     "v428_entry_confirm_score","v428_confirmation_below_zone_atr",
+    "v428_confirm_rr2_room_ok",
 ]
 
 
