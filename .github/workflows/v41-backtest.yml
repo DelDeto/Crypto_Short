@@ -51,8 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
-      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '24' }}
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '360' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
 
     steps:
       - name: Checkout
