@@ -152,15 +152,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      V4_TRAIN_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.train_days || '14' }}
-      V4_TEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.test_days || '7' }}
-      V4_FINAL_HOLDOUT_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.final_holdout_days || '7' }}
+      V4_TRAIN_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.train_days || '180' }}
+      V4_TEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.test_days || '30' }}
+      V4_FINAL_HOLDOUT_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.final_holdout_days || '60' }}
       V4_EMBARGO_HOURS: "72"
       V4_MIN_TRAIN_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '250' || '20' }}
       V4_MIN_ENGINE_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '40' || '5' }}
       V4_MIN_REGIME_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '20' || '3' }}
-      V4_MIN_EXPECTED_R: ${{ github.event_name == 'workflow_dispatch' && inputs.min_expected_r || '0.05' }}
-      V4_MIN_PROBABILITY: ${{ github.event_name == 'workflow_dispatch' && inputs.min_probability || '0.30' }}
+      V4_MIN_EXPECTED_R: ${{ github.event_name == 'workflow_dispatch' && inputs.min_expected_r || '0.15' }}
+      V4_MIN_PROBABILITY: ${{ github.event_name == 'workflow_dispatch' && inputs.min_probability || '0.35' }}
       V4_MAX_PER_TIMESTAMP: "3"
       V4_MAX_CONCURRENT: "3"
       V4_MAX_PER_CLUSTER: "1"
