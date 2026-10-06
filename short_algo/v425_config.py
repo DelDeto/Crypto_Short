@@ -1,0 +1,40 @@
+"""V4.2.5 24h path + dense cross-sectional scanner configuration."""
+
+import os
+
+V425_SCAN_CADENCE_HOURS = int(os.getenv("V425_SCAN_CADENCE_HOURS", "4"))
+V425_EMBARGO_HOURS = int(os.getenv("V425_EMBARGO_HOURS", "24"))
+V425_INITIAL_TRAIN_FRACTION = float(os.getenv("V425_INITIAL_TRAIN_FRACTION", "0.40"))
+V425_OOS_FOLDS = int(os.getenv("V425_OOS_FOLDS", "4"))
+V425_MIN_TRAIN_ROWS = int(os.getenv("V425_MIN_TRAIN_ROWS", "500"))
+
+V425_MODEL_STEPS = int(os.getenv("V425_MODEL_STEPS", "450"))
+V425_MODEL_LR = float(os.getenv("V425_MODEL_LR", "0.05"))
+V425_MODEL_L2 = float(os.getenv("V425_MODEL_L2", "0.08"))
+
+# Separate "is there a Short opportunity?" from "does downside persist?"
+V425_OPPORTUNITY_WEIGHT_4H = float(os.getenv("V425_OPPORTUNITY_WEIGHT_4H", "0.45"))
+V425_OPPORTUNITY_WEIGHT_FIRST = float(os.getenv("V425_OPPORTUNITY_WEIGHT_FIRST", "0.55"))
+V425_PERSISTENCE_WEIGHT_12H = float(os.getenv("V425_PERSISTENCE_WEIGHT_12H", "0.45"))
+V425_PERSISTENCE_WEIGHT_24H = float(os.getenv("V425_PERSISTENCE_WEIGHT_24H", "0.55"))
+
+V425_PRIORITY_TOP_PCT = float(os.getenv("V425_PRIORITY_TOP_PCT", "0.15"))
+V425_WAIT_TOP_PCT = float(os.getenv("V425_WAIT_TOP_PCT", "0.30"))
+V425_PRIORITY_MIN_OPPORTUNITY = float(os.getenv("V425_PRIORITY_MIN_OPPORTUNITY", "0.52"))
+V425_SWING_MIN_PERSISTENCE = float(os.getenv("V425_SWING_MIN_PERSISTENCE", "0.52"))
+V425_WAIT_MIN_OPPORTUNITY = float(os.getenv("V425_WAIT_MIN_OPPORTUNITY", "0.50"))
+V425_READY_ZONE_DISTANCE_ATR = float(os.getenv("V425_READY_ZONE_DISTANCE_ATR", "0.75"))
+
+# Severe bottom guardrail only; ordinary bottom context stays as a model feature.
+V425_BOTTOM_LOW_DISTANCE_ATR = float(os.getenv("V425_BOTTOM_LOW_DISTANCE_ATR", "0.25"))
+V425_BOTTOM_SUPPORT_DISTANCE_ATR = float(os.getenv("V425_BOTTOM_SUPPORT_DISTANCE_ATR", "0.50"))
+V425_BOTTOM_EMA_DISTANCE_ATR = float(os.getenv("V425_BOTTOM_EMA_DISTANCE_ATR", "1.80"))
+V425_BOTTOM_FAST_DROP_ATR = float(os.getenv("V425_BOTTOM_FAST_DROP_ATR", "1.50"))
+
+V425_REFERENCE_STOP_BUFFER_ATR = float(os.getenv("V425_REFERENCE_STOP_BUFFER_ATR", "0.18"))
+V425_SLIPPAGE_BPS_REFERENCE = float(os.getenv("V425_SLIPPAGE_BPS_REFERENCE", "6"))
+
+V425_FIRST_MOVE_ATR = float(os.getenv("V425_FIRST_MOVE_ATR", "0.50"))
+V425_FIRST_MOVE_WINDOW_HOURS = int(os.getenv("V425_FIRST_MOVE_WINDOW_HOURS", "24"))
+V425_PATH_HOURS = (1, 2, 4, 8, 12, 16, 20, 24)
+V425_BLOCK_HOURS = 4
