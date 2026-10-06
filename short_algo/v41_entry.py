@@ -187,7 +187,7 @@ def simulate_confirmed_retest(zone, fifteen_future, nearest_support=None):
                     continue
 
                 return {
-                    "entry_time": pd.Timestamp(ts).isoformat(),
+                    "entry_time": (pd.Timestamp(ts) + pd.Timedelta(minutes=15)).isoformat(),
                     "entry_bar": bars,
                     "entry": entry,
                     "stop": stop,
