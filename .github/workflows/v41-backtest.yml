@@ -1,0 +1,182 @@
+name: Crypto Short V4.1 Entry Quality
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen historical replay days"
+        required: true
+        default: "360"
+      symbol_limit:
+        description: "Frozen crypto cohort size"
+        required: true
+        default: "120"
+      horizon_hours:
+        description: "Outcome horizon after entry"
+        required: true
+        default: "72"
+      entry_wait_hours:
+        description: "Maximum wait for zone retest + confirmation"
+        required: true
+        default: "8"
+      post_sl_hours:
+        description: "Observation window after a stop"
+        required: true
+        default: "72"
+      fee_bps:
+        description: "Round-trip fee assumption in bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage assumption in bps"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v41_*.py"
+      - ".github/workflows/v41-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v41-entry
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: freeze-v41-manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '24' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile V4.1
+        run: python -m compileall -q short_algo
+
+      - name: Freeze V4.1 dataset
+        run: python -m short_algo.v4_prepare
+
+      - name: Upload frozen manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V41-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v41-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '72' }}
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "24"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+      V41_ENTRY_WAIT_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.entry_wait_hours || '8' }}
+      V41_POST_SL_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.post_sl_hours || '72' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download frozen manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V41-Manifest
+          path: frozen
+
+      - name: Compile V4.1
+        run: python -m compileall -q short_algo
+
+      - name: Run V4.1 entry replay
+        run: python -m short_algo.v41_main
+
+      - name: Upload V4.1 shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V41-Shard-${{ matrix.shard }}
+          path: |
+            output/v41_backtest.json
+            output/v41_trades.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v41-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download all V4.1 shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V41-Shard-*
+          path: shard_outputs
+
+      - name: Compile V4.1
+        run: python -m compileall -q short_algo
+
+      - name: Merge V4.1 and audit entries
+        run: python -m short_algo.v41_merge shard_outputs
+
+      - name: Publish V4.1 summary
+        run: cat output/v41_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload final V4.1 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V41-Backtest-Final
+          path: |
+            output/v41_backtest.json
+            output/v41_trades.csv
+            output/v41_analysis.json
+            output/v41_manifest.json
+            output/v41_summary.md
+          if-no-files-found: error
+          retention-days: 30
