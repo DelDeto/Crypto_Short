@@ -38,6 +38,8 @@ def build_v426_features(base, one, four, btc_one, eth_one):
             "v426_rr2_room_ok": 0,
             "v426_strong_zone": 0,
             "v426_near_zone": 0,
+            "v426_in_zone": 0,
+            "v426_below_zone": 0,
         })
         return row
 
@@ -89,5 +91,7 @@ def build_v426_features(base, one, four, btc_one, eth_one):
         "v426_near_zone": int(
             distance <= float(V426_ZONE_NEAR_ATR)
         ),
+        "v426_in_zone": int(lower <= current <= upper),
+        "v426_below_zone": int(current < lower),
     })
     return row
