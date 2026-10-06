@@ -579,42 +579,8 @@ def simulate_confirmed_retest(
                             entry - float(nearest_support)
                         ) / risk
 
-                    if support_room_r is None:
-                        return _rejection(
-                            "UNKNOWN_SUPPORT",
-                            zone,
-                            audit=audit,
-                            state=state,
-                        )
-                    if projected_cost_r > V3_MAX_COST_R:
-                        return _rejection(
-                            "COST_TOO_HIGH",
-                            zone,
-                            audit=audit,
-                            state=state,
-                            projected_cost_r=round(projected_cost_r, 4),
-                        )
-                    if stop_pct > V41_MAX_STOP_PCT:
-                        return _rejection(
-                            "STOP_TOO_WIDE",
-                            zone,
-                            audit=audit,
-                            state=state,
-                            stop_pct=round(stop_pct, 4),
-                        )
-                    if support_room_r < V41_MIN_SUPPORT_ROOM_R:
-                        return _rejection(
-                            "SUPPORT_TOO_CLOSE",
-                            zone,
-                            audit=audit,
-                            state=state,
-                            support_room_r=round(support_room_r, 4),
-                        )
-
-                    return {
-                        **audit,
-                        "filled": True,
-                        "reject_reason": None,
+                    plan = {
+                        "execution_candidate": True,
                         "entry_time": (
                             pd.Timestamp(ts) + pd.Timedelta(minutes=15)
                         ).isoformat(),
@@ -627,7 +593,10 @@ def simulate_confirmed_retest(
                         "tp1": entry - 2.0 * risk,
                         "tp2": entry - 3.0 * risk,
                         "runner": entry - 5.0 * risk,
-                        "support_room_r": round(support_room_r, 4),
+                        "support_room_r": (
+                            None if support_room_r is None
+                            else round(support_room_r, 4)
+                        ),
                         "zone_source": zone["source"],
                         "zone_lower": zone["lower"],
                         "zone_upper": zone["upper"],
@@ -649,6 +618,46 @@ def simulate_confirmed_retest(
                         "bos_bar": int(bos_bar or bars),
                         "touch_bar": int(touch_bar or bars),
                         "structure_sequence": "ZONE_TOUCH>BOS>RETEST>CONFIRM",
+                    }
+
+                    if support_room_r is None:
+                        return _rejection(
+                            "UNKNOWN_SUPPORT",
+                            zone,
+                            audit=audit,
+                            state=state,
+                            **plan,
+                        )
+                    if projected_cost_r > V3_MAX_COST_R:
+                        return _rejection(
+                            "COST_TOO_HIGH",
+                            zone,
+                            audit=audit,
+                            state=state,
+                            **plan,
+                        )
+                    if stop_pct > V41_MAX_STOP_PCT:
+                        return _rejection(
+                            "STOP_TOO_WIDE",
+                            zone,
+                            audit=audit,
+                            state=state,
+                            **plan,
+                        )
+                    if support_room_r < V41_MIN_SUPPORT_ROOM_R:
+                        return _rejection(
+                            "SUPPORT_TOO_CLOSE",
+                            zone,
+                            audit=audit,
+                            state=state,
+                            **plan,
+                        )
+
+                    return {
+                        **audit,
+                        **plan,
+                        "filled": True,
+                        "reject_reason": None,
                     }
 
             history.append(row)
