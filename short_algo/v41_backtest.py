@@ -39,10 +39,7 @@ def _eligible_candidate(candidate):
     # V4.1 intentionally re-evaluates location, stop and support room after
     # the optimized entry is found. Do not let the old signal-price risk gate
     # reject an otherwise valid location-first setup.
-    return bool(
-        gate.get("engine_hard_gate")
-        and gate.get("cost_ok")
-    )
+    return bool(gate.get("engine_hard_gate"))
 
 
 def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, manifest_id):
@@ -263,6 +260,7 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, m
                 "stop": optimized["stop"],
                 "risk": optimized["risk"],
                 "stop_pct": optimized["stop_pct"],
+                "projected_cost_r": optimized.get("projected_cost_r"),
                 "tp1": optimized["tp1"],
                 "tp2": optimized["tp2"],
                 "runner": optimized["runner"],
@@ -356,7 +354,7 @@ def run_v41_backtest(manifest_path=None):
         "selected_symbol_count": len(selected),
         "manifest_symbol_count": len(all_symbols),
         "settings": {
-            "candidate_gate": "V3 engine hard gate + cost gate; V4.1 re-evaluates stop/support risk after optimized entry",
+            "candidate_gate": "V3 engine hard gate only; V4.1 re-evaluates stop/support/cost after optimized entry",
             "entry_method": "fresh valid zone -> touch -> 15m bearish BOS -> failed retest -> bearish confirmation close",
             "entry_wait_hours": V41_ENTRY_WAIT_HOURS,
             "outcome_horizon_hours": BACKTEST_HORIZON_HOURS,
