@@ -1,0 +1,31 @@
+"""V4.2.2 discretionary Short filter configuration."""
+
+import os
+
+V422_MIN_EMIT_SCORE = float(os.getenv("V422_MIN_EMIT_SCORE", "38"))
+V422_MIN_SHORT_NOW_SCORE = float(os.getenv("V422_MIN_SHORT_NOW_SCORE", "56"))
+
+# Entry/location readiness.
+V422_READY_ZONE_DISTANCE_ATR = float(os.getenv("V422_READY_ZONE_DISTANCE_ATR", "0.45"))
+V422_PULLBACK_TOUCH_ATR = float(os.getenv("V422_PULLBACK_TOUCH_ATR", "0.22"))
+V422_PULLBACK_MAX_BELOW_LEVEL_ATR = float(os.getenv("V422_PULLBACK_MAX_BELOW_LEVEL_ATR", "0.65"))
+V422_BREAKDOWN_MAX_AGE_1H = int(os.getenv("V422_BREAKDOWN_MAX_AGE_1H", "12"))
+
+# Anti-bottom / rebound risk.
+V422_BOTTOM_BLOCK_SCORE = float(os.getenv("V422_BOTTOM_BLOCK_SCORE", "12"))
+V422_RECENT_LOW_NEAR_ATR = float(os.getenv("V422_RECENT_LOW_NEAR_ATR", "0.35"))
+V422_RECENT_LOW_CAUTION_ATR = float(os.getenv("V422_RECENT_LOW_CAUTION_ATR", "0.65"))
+V422_DROP_LEG_EXTREME_ATR = float(os.getenv("V422_DROP_LEG_EXTREME_ATR", "3.0"))
+V422_FAST_DROP_ATR = float(os.getenv("V422_FAST_DROP_ATR", "2.0"))
+V422_CAPITULATION_RANGE_ATR = float(os.getenv("V422_CAPITULATION_RANGE_ATR", "1.5"))
+V422_CAPITULATION_VOL_RATIO = float(os.getenv("V422_CAPITULATION_VOL_RATIO", "1.5"))
+V422_SUPPORT_BLOCK_ATR = float(os.getenv("V422_SUPPORT_BLOCK_ATR", "0.80"))
+V422_EMA_EXTENDED_ATR = float(os.getenv("V422_EMA_EXTENDED_ATR", "1.80"))
+
+# Reference levels only. User controls actual execution.
+V422_REFERENCE_STOP_BUFFER_ATR = float(os.getenv("V422_REFERENCE_STOP_BUFFER_ATR", "0.18"))
+V422_SLIPPAGE_BPS_REFERENCE = float(os.getenv("V422_SLIPPAGE_BPS_REFERENCE", "6"))
+
+V422_DIRECTION_HOURS = (1, 4, 12)
+V422_FIRST_MOVE_ATR = float(os.getenv("V422_FIRST_MOVE_ATR", "0.50"))
+V422_FIRST_MOVE_WINDOW_HOURS = int(os.getenv("V422_FIRST_MOVE_WINDOW_HOURS", "12"))
