@@ -10,7 +10,10 @@ from .v41_backtest import run_v41_backtest
 CSV_FIELDS = [
     "manifest_id", "symbol", "signal_time", "v3_engine", "v3_score",
     "entry_status", "entry_reject_reason", "entry_state_at_reject",
-    "optimized_entry_filled", "zone_source",
+    "audit_zone_touched", "audit_bos_confirmed", "audit_retest_seen",
+    "audit_confirmation_seen", "audit_max_confirmation_score",
+    "reject_projected_cost_r", "reject_support_room_r", "reject_stop_pct",
+    "reject_bos_level", "optimized_entry_filled", "zone_source",
     "zone_lower", "zone_upper", "zone_mid", "ideal_entry",
     "zone_prior_touch_count", "zone_age_1h_bars",
     "zone_location_quality", "zone_freshness_reason",
