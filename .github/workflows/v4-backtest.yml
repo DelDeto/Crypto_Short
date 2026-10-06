@@ -55,7 +55,7 @@ permissions:
 
 concurrency:
   group: crypto-short-v4-backtest
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   prepare:
