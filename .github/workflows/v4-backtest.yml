@@ -1,0 +1,207 @@
+name: Crypto Short V4 Backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen historical replay days"
+        required: true
+        default: "360"
+      symbol_limit:
+        description: "Frozen crypto cohort size"
+        required: true
+        default: "120"
+      horizon_hours:
+        description: "Outcome horizon"
+        required: true
+        default: "72"
+      fee_bps:
+        description: "Round-trip fee assumption in bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage assumption in bps"
+        required: true
+        default: "6"
+      train_days:
+        description: "Rolling meta-model training days"
+        required: true
+        default: "180"
+      test_days:
+        description: "Walk-forward test window days"
+        required: true
+        default: "30"
+      final_holdout_days:
+        description: "Untouched final holdout days"
+        required: true
+        default: "60"
+      min_expected_r:
+        description: "Minimum OOS expected R for ENTRY_READY"
+        required: true
+        default: "0.15"
+      min_probability:
+        description: "Minimum predicted profitable probability"
+        required: true
+        default: "0.35"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v4_*.py"
+      - ".github/workflows/v4-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v4-backtest
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: freeze-v4-manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '45' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '16' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile V4
+        run: python -m compileall -q short_algo
+
+      - name: Freeze V4 dataset
+        run: python -m short_algo.v4_prepare
+
+      - name: Upload frozen manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v4-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '48' }}
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "16"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download frozen manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V4-Manifest
+          path: frozen
+
+      - name: Compile V4
+        run: python -m compileall -q short_algo
+
+      - name: Run V4 frozen candidate replay
+        run: python -m short_algo.v4_main
+
+      - name: Upload V4 shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4-Shard-${{ matrix.shard }}
+          path: |
+            output/v4_backtest.json
+            output/v4_trades.csv
+            output/v4_summary.md
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v4-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      V4_TRAIN_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.train_days || '14' }}
+      V4_TEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.test_days || '7' }}
+      V4_FINAL_HOLDOUT_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.final_holdout_days || '7' }}
+      V4_EMBARGO_HOURS: "72"
+      V4_MIN_TRAIN_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '250' || '20' }}
+      V4_MIN_ENGINE_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '40' || '5' }}
+      V4_MIN_REGIME_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '20' || '3' }}
+      V4_MIN_EXPECTED_R: ${{ github.event_name == 'workflow_dispatch' && inputs.min_expected_r || '0.05' }}
+      V4_MIN_PROBABILITY: ${{ github.event_name == 'workflow_dispatch' && inputs.min_probability || '0.30' }}
+      V4_MAX_PER_TIMESTAMP: "3"
+      V4_MAX_CONCURRENT: "3"
+      V4_MAX_PER_CLUSTER: "1"
+      V4_PORTFOLIO_RISK_PCT: "0.5"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download all V4 shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V4-Shard-*
+          path: shard_outputs
+
+      - name: Compile V4
+        run: python -m compileall -q short_algo
+
+      - name: Merge, walk-forward and rank V4
+        run: python -m short_algo.v4_merge shard_outputs
+
+      - name: Publish V4 summary
+        run: cat output/v4_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload final V4 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4-Backtest-Final
+          path: |
+            output/v4_backtest.json
+            output/v4_trades.csv
+            output/v4_calibration.json
+            output/v4_manifest.json
+            output/v4_summary.md
+          if-no-files-found: error
+          retention-days: 30
