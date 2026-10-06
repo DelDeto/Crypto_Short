@@ -1,0 +1,169 @@
+name: Crypto Short V4.2.4 Scanner Ranking
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen historical replay days"
+        required: true
+        default: "360"
+      symbol_limit:
+        description: "Frozen crypto cohort size"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee reference in bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Slippage reference only; never a ranking hard gate"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v424_*.py"
+      - ".github/workflows/v424-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v424-scanner
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: freeze-v424-manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '24' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile V4.2.4
+        run: python -m compileall -q short_algo
+
+      - name: Freeze dataset
+        run: python -m short_algo.v4_prepare
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V424-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v424-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      V424_SLIPPAGE_BPS_REFERENCE: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "24"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V424-Manifest
+          path: frozen
+
+      - name: Compile V4.2.4
+        run: python -m compileall -q short_algo
+
+      - name: Build raw scanner dataset
+        run: python -m short_algo.v424_main
+
+      - name: Upload shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V424-Shard-${{ matrix.shard }}
+          path: |
+            output/v424_backtest.json
+            output/v424_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v424-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download all shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V424-Shard-*
+          path: shard_outputs
+
+      - name: Compile V4.2.4
+        run: python -m compileall -q short_algo
+
+      - name: Walk-forward train, rank and analyze
+        run: python -m short_algo.v424_merge shard_outputs
+
+      - name: Publish summary
+        run: cat output/v424_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload final report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V424-Backtest-Final
+          path: |
+            output/v424_backtest.json
+            output/v424_analysis.json
+            output/v424_fold_models.json
+            output/v424_manifest.json
+            output/v424_scored_candidates.csv
+            output/v424_summary.md
+          if-no-files-found: error
+          retention-days: 30
