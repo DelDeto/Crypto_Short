@@ -36,9 +36,11 @@ def _prefix(prefix, payload):
 
 def _eligible_candidate(candidate):
     gate = candidate.get("v3_gate") or {}
+    # V4.1 intentionally re-evaluates location, stop and support room after
+    # the optimized entry is found. Do not let the old signal-price risk gate
+    # reject an otherwise valid location-first setup.
     return bool(
         gate.get("engine_hard_gate")
-        and gate.get("risk_ok")
         and gate.get("cost_ok")
     )
 
@@ -173,7 +175,9 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, m
                 zone,
                 future15_from_signal,
                 nearest_support=base.get("nearest_support"),
+                fifteen_history=fifteen_view,
             )
+            optimized_filled = bool(optimized and optimized.get("filled"))
 
             record = {
                 "manifest_id": manifest_id,
@@ -189,16 +193,22 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, m
                 "signal_tp1": base_tp1,
                 "signal_stop_pct": candidate.get("stop_pct"),
                 "nearest_support": base.get("nearest_support"),
-                "optimized_entry_filled": optimized is not None,
+                "optimized_entry_filled": optimized_filled,
                 "entry_status": (
                     "CONFIRMED_RETEST_ENTRY"
-                    if optimized is not None
-                    else ("NO_VALID_ZONE" if zone is None else "NO_CONFIRMED_RETEST")
+                    if optimized_filled
+                    else str((optimized or {}).get("reject_reason") or "NO_VALID_ZONE")
                 ),
+                "entry_reject_reason": None if optimized_filled else (optimized or {}).get("reject_reason"),
+                "entry_state_at_reject": None if optimized_filled else (optimized or {}).get("state"),
                 "zone_source": None if zone is None else zone.get("source"),
                 "zone_lower": None if zone is None else zone.get("lower"),
                 "zone_upper": None if zone is None else zone.get("upper"),
                 "zone_mid": None if zone is None else zone.get("mid"),
+                "zone_prior_touch_count": None if zone is None else zone.get("prior_touch_count"),
+                "zone_age_1h_bars": None if zone is None else zone.get("age_1h_bars"),
+                "zone_location_quality": None if zone is None else zone.get("location_quality"),
+                "zone_freshness_reason": None if zone is None else zone.get("freshness_reason"),
                 "ideal_entry": None if zone is None else zone.get("ideal_entry"),
                 "baseline_outcome": baseline_outcome.get("outcome"),
                 "baseline_realized_r": baseline_outcome.get("realized_r"),
@@ -209,7 +219,7 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, m
                 **_prefix("baseline_", baseline_post),
             }
 
-            if optimized is None:
+            if not optimized_filled:
                 rows.append(record)
                 continue
 
@@ -260,6 +270,14 @@ def _replay_symbol(symbol, frames, period_start, period_end, btc_one, eth_one, m
                 "entry_improvement_atr": optimized["entry_improvement_atr"],
                 "confirmation_score": optimized["confirmation_score"],
                 "wait_bars_15m": optimized["wait_bars_15m"],
+                "bos_level": optimized.get("bos_level"),
+                "bos_bar": optimized.get("bos_bar"),
+                "touch_bar": optimized.get("touch_bar"),
+                "structure_sequence": optimized.get("structure_sequence"),
+                "zone_prior_touch_count": optimized.get("zone_prior_touch_count"),
+                "zone_age_1h_bars": optimized.get("zone_age_1h_bars"),
+                "zone_location_quality": optimized.get("zone_location_quality"),
+                "zone_freshness_reason": optimized.get("zone_freshness_reason"),
                 "outcome_bar_minutes": 15,
                 **outcome,
                 **ft,
@@ -338,8 +356,8 @@ def run_v41_backtest(manifest_path=None):
         "selected_symbol_count": len(selected),
         "manifest_symbol_count": len(all_symbols),
         "settings": {
-            "candidate_gate": "V3 engine hard gate + risk/cost gate; hand score is not final entry gate",
-            "entry_method": "engine-aware zone -> retest -> 15m bearish confirmation close",
+            "candidate_gate": "V3 engine hard gate + cost gate; V4.1 re-evaluates stop/support risk after optimized entry",
+            "entry_method": "fresh valid zone -> touch -> 15m bearish BOS -> failed retest -> bearish confirmation close",
             "entry_wait_hours": V41_ENTRY_WAIT_HOURS,
             "outcome_horizon_hours": BACKTEST_HORIZON_HOURS,
             "post_sl_observation_hours": 72,
