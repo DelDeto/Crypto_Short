@@ -1,0 +1,177 @@
+name: Crypto Short V4.2 Structural Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen historical replay days"
+        required: true
+        default: "360"
+      symbol_limit:
+        description: "Frozen crypto cohort size"
+        required: true
+        default: "120"
+      horizon_hours:
+        description: "Outcome horizon after entry"
+        required: true
+        default: "72"
+      entry_wait_hours:
+        description: "Max wait for structural entry"
+        required: true
+        default: "10"
+      fee_bps:
+        description: "Round-trip fee assumption"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage assumption"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v42_*.py"
+      - ".github/workflows/v42-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v42-structural
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: freeze-v42-manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '24' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile V4.2
+        run: python -m compileall -q short_algo
+
+      - name: Freeze dataset
+        run: python -m short_algo.v4_prepare
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V42-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v42-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_HORIZON_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.horizon_hours || '72' }}
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "24"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+      V42_ENTRY_WAIT_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.entry_wait_hours || '10' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V42-Manifest
+          path: frozen
+
+      - name: Compile V4.2
+        run: python -m compileall -q short_algo
+
+      - name: Run V4.2 replay
+        run: python -m short_algo.v42_main
+
+      - name: Upload shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V42-Shard-${{ matrix.shard }}
+          path: |
+            output/v42_backtest.json
+            output/v42_trades.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v42-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download all shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V42-Shard-*
+          path: shard_outputs
+
+      - name: Compile V4.2
+        run: python -m compileall -q short_algo
+
+      - name: Merge and analyze
+        run: python -m short_algo.v42_merge shard_outputs
+
+      - name: Publish summary
+        run: cat output/v42_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload final V4.2 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V42-Backtest-Final
+          path: |
+            output/v42_backtest.json
+            output/v42_trades.csv
+            output/v42_analysis.json
+            output/v42_manifest.json
+            output/v42_summary.md
+          if-no-files-found: error
+          retention-days: 30
