@@ -156,9 +156,9 @@ jobs:
       V4_TEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.test_days || '30' }}
       V4_FINAL_HOLDOUT_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.final_holdout_days || '60' }}
       V4_EMBARGO_HOURS: "72"
-      V4_MIN_TRAIN_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '250' || '20' }}
-      V4_MIN_ENGINE_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '40' || '5' }}
-      V4_MIN_REGIME_SAMPLES: ${{ github.event_name == 'workflow_dispatch' && '20' || '3' }}
+      V4_MIN_TRAIN_SAMPLES: ${{ '250' }}
+      V4_MIN_ENGINE_SAMPLES: ${{ '40' }}
+      V4_MIN_REGIME_SAMPLES: ${{ '20' }}
       V4_MIN_EXPECTED_R: ${{ github.event_name == 'workflow_dispatch' && inputs.min_expected_r || '0.15' }}
       V4_MIN_PROBABILITY: ${{ github.event_name == 'workflow_dispatch' && inputs.min_probability || '0.35' }}
       V4_MAX_PER_TIMESTAMP: "3"
