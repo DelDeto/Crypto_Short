@@ -10,6 +10,11 @@ import math
 
 import pandas as pd
 
+from .config import (
+    BACKTEST_FEE_BPS_ROUND_TRIP,
+    BACKTEST_SLIPPAGE_BPS_ROUND_TRIP,
+    V3_MAX_COST_R,
+)
 from .indicators import atr, ema
 from .v41_config import (
     V41_BOS_BUFFER_ATR1H,
@@ -518,6 +523,13 @@ def simulate_confirmed_retest(
                     stop_pct = (
                         risk / max(entry, 1e-12) * 100.0
                     )
+                    total_cost_bps = (
+                        float(BACKTEST_FEE_BPS_ROUND_TRIP)
+                        + float(BACKTEST_SLIPPAGE_BPS_ROUND_TRIP)
+                    )
+                    projected_cost_r = (
+                        entry * total_cost_bps / 10000.0
+                    ) / risk
 
                     support_room_r = None
                     if (
@@ -533,6 +545,13 @@ def simulate_confirmed_retest(
                             "UNKNOWN_SUPPORT",
                             zone,
                             state=state,
+                        )
+                    if projected_cost_r > V3_MAX_COST_R:
+                        return _rejection(
+                            "COST_TOO_HIGH",
+                            zone,
+                            state=state,
+                            projected_cost_r=round(projected_cost_r, 4),
                         )
                     if stop_pct > V41_MAX_STOP_PCT:
                         return _rejection(
@@ -560,6 +579,7 @@ def simulate_confirmed_retest(
                         "stop": stop,
                         "risk": risk,
                         "stop_pct": round(stop_pct, 4),
+                        "projected_cost_r": round(projected_cost_r, 4),
                         "tp1": entry - 2.0 * risk,
                         "tp2": entry - 3.0 * risk,
                         "runner": entry - 5.0 * risk,
