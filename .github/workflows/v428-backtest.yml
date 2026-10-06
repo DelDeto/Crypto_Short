@@ -1,0 +1,136 @@
+name: Crypto Short V4.2.8 Trend Phase Confirmed Entry
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen historical replay days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen crypto cohort size"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee reference in bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Slippage reference only"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v428_*.py"
+      - ".github/workflows/v428-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v428-phase-confirmation
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: freeze-v428-manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile V4.2.8
+        run: python -m compileall -q short_algo
+      - name: Freeze dataset
+        run: python -m short_algo.v4_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V428-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v428-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V428-Manifest
+          path: frozen
+      - name: Compile V4.2.8
+        run: python -m compileall -q short_algo
+      - name: Build V4.2.8 dataset
+        run: python -m short_algo.v428_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V428-Shard-${{ matrix.shard }}
+          path: |
+            output/v428_backtest.json
+            output/v428_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v428-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V428-Shard-*
+          path: shard_outputs
+      - name: Compile V4.2.8
+        run: python -m compileall -q short_algo
+      - name: Walk-forward trend phase + confirmed entry
+        run: python -m short_algo.v428_merge shard_outputs
+      - name: Publish summary
+        run: cat output/v428_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V428-Backtest-Final
+          path: |
+            output/v428_backtest.json
+            output/v428_analysis.json
+            output/v428_model_meta.json
+            output/v428_manifest.json
+            output/v428_scored_candidates.csv
+            output/v428_summary.md
+          if-no-files-found: error
+          retention-days: 30
