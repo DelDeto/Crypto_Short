@@ -35,6 +35,22 @@ def _baseline_view(rows):
     return out
 
 
+def _shadow_view(rows):
+    out = []
+    for row in rows:
+        if row.get("shadow_realized_r") is None:
+            continue
+        out.append({
+            **row,
+            "realized_r": row.get("shadow_realized_r"),
+            "outcome": row.get("shadow_outcome"),
+            "cost_r": row.get("shadow_cost_r"),
+            "mae_r": row.get("shadow_mae_r"),
+            "mfe_r": row.get("shadow_mfe_r"),
+        })
+    return out
+
+
 def _rate(rows, key):
     vals = [bool(r.get(key)) for r in rows if r.get(key) is not None]
     return round(sum(vals) / len(vals) * 100.0, 2) if vals else None
@@ -54,10 +70,17 @@ def _diagnostics(rows):
     filled = [r for r in rows if r.get("optimized_entry_filled") and r.get("realized_r") is not None]
     baseline_all = _baseline_view(rows)
     baseline_filled = _baseline_view([r for r in rows if r.get("optimized_entry_filled")])
+    shadow_rows = _shadow_view(rows)
+    shadow_source_rows = [
+        r for r in rows if r.get("shadow_execution_candidate")
+    ]
+    baseline_shadow = _baseline_view(shadow_source_rows)
 
     opt_metrics = metrics(filled)
     base_all_metrics = metrics(baseline_all)
     base_filled_metrics = metrics(baseline_filled)
+    shadow_metrics = metrics(shadow_rows)
+    baseline_shadow_metrics = metrics(baseline_shadow)
 
     losses = [r for r in filled if r.get("outcome") == "LOSS"]
     base_losses = [r for r in rows if r.get("baseline_outcome") == "LOSS"]
@@ -106,6 +129,24 @@ def _diagnostics(rows):
         "avg_zone_location_quality": _avg(filled, "zone_location_quality"),
         "avg_zone_prior_touch_count": _avg(filled, "zone_prior_touch_count"),
         "optimized": opt_metrics,
+        "shadow_confirmed_entries": shadow_metrics,
+        "baseline_same_shadow_setups": baseline_shadow_metrics,
+        "shadow_expectancy_improvement_r_vs_signal_entry": (
+            round(
+                float(shadow_metrics.get("expectancy_r"))
+                - float(baseline_shadow_metrics.get("expectancy_r")),
+                4,
+            )
+            if shadow_metrics.get("expectancy_r") is not None
+            and baseline_shadow_metrics.get("expectancy_r") is not None
+            else None
+        ),
+        "shadow_followthrough": {
+            "close_below_entry_1h_pct": _rate(shadow_source_rows, "shadow_ft_1h_short"),
+            "close_below_entry_4h_pct": _rate(shadow_source_rows, "shadow_ft_4h_short"),
+            "avg_1h_close_r": _avg(shadow_source_rows, "shadow_ft_1h_close_r"),
+            "avg_4h_close_r": _avg(shadow_source_rows, "shadow_ft_4h_close_r"),
+        },
         "baseline_all_setups": base_all_metrics,
         "baseline_same_filled_setups": base_filled_metrics,
         "expectancy_improvement_r_vs_same_setups": delta,
@@ -165,6 +206,14 @@ def _summary_md(report):
         f"- Avg zone quality: {overall.get('avg_zone_location_quality')}",
         f"- Funnel: {overall.get('entry_funnel')}",
         f"- Reject reasons: {overall.get('entry_reject_reasons')}",
+        "",
+        "## Shadow confirmed entries — before execution gate",
+        f"- Shadow confirmations: {overall['shadow_confirmed_entries'].get('signals', 0)}",
+        f"- Shadow expectancy: {overall['shadow_confirmed_entries'].get('expectancy_r')}R | PF {overall['shadow_confirmed_entries'].get('profit_factor')}",
+        f"- Same-setup signal-entry expectancy: {overall['baseline_same_shadow_setups'].get('expectancy_r')}R | PF {overall['baseline_same_shadow_setups'].get('profit_factor')}",
+        f"- Entry delta before execution gate: {overall.get('shadow_expectancy_improvement_r_vs_signal_entry')}R/trade",
+        f"- Shadow 1h close below entry: {overall['shadow_followthrough'].get('close_below_entry_1h_pct')}%",
+        f"- Shadow 4h close below entry: {overall['shadow_followthrough'].get('close_below_entry_4h_pct')}%",
         "",
         "## A/B on the same filled setups",
         f"- Signal-entry expectancy: {base.get('expectancy_r')}R | PF {base.get('profit_factor')}",
