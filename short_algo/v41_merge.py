@@ -63,6 +63,15 @@ def _diagnostics(rows):
     base_losses = [r for r in rows if r.get("baseline_outcome") == "LOSS"]
 
     post_counts = Counter(str(r.get("post_sl_class") or "UNKNOWN") for r in losses)
+    reject_counts = Counter(
+        str(r.get("entry_reject_reason") or "UNKNOWN")
+        for r in rows
+        if not r.get("optimized_entry_filled")
+    )
+    zone_counts = Counter(
+        str(r.get("zone_source") or "NO_VALID_ZONE")
+        for r in rows
+    )
     base_post_counts = Counter(
         str(r.get("baseline_post_sl_class") or "UNKNOWN") for r in base_losses
     )
@@ -85,6 +94,10 @@ def _diagnostics(rows):
         "zones_found": sum(1 for r in rows if r.get("zone_source")),
         "filled": len(filled),
         "fill_rate_pct": round(len(filled) / len(rows) * 100.0, 2) if rows else None,
+        "entry_reject_reasons": dict(sorted(reject_counts.items())),
+        "zone_source_counts": dict(sorted(zone_counts.items())),
+        "avg_zone_location_quality": _avg(filled, "zone_location_quality"),
+        "avg_zone_prior_touch_count": _avg(filled, "zone_prior_touch_count"),
         "optimized": opt_metrics,
         "baseline_all_setups": base_all_metrics,
         "baseline_same_filled_setups": base_filled_metrics,
@@ -142,6 +155,8 @@ def _summary_md(report):
         f"- Confirmed retest entries: {overall['filled']} ({overall['fill_rate_pct']}%)",
         f"- Avg entry improvement vs signal: {overall['avg_entry_improvement_atr']} ATR",
         f"- Avg wait: {overall['avg_wait_bars_15m']} x 15m bars",
+        f"- Avg zone quality: {overall.get('avg_zone_location_quality')}",
+        f"- Reject reasons: {overall.get('entry_reject_reasons')}",
         "",
         "## A/B on the same filled setups",
         f"- Signal-entry expectancy: {base.get('expectancy_r')}R | PF {base.get('profit_factor')}",
@@ -182,6 +197,8 @@ def _summary_md(report):
     lines += [
         "",
         "## Interpretation",
+        "- V4.1 only enters after a fresh/valid location is touched, a 15m bearish BOS occurs, and the broken micro level is retested and rejected.",
+        "- Unknown support is rejected instead of being treated as artificial 5R room.",
         "- A positive A/B delta means waiting for the zone/retest improved the exact same setup cohort.",
         "- FALSE_STOP_THEN_TP2R means price hit SL first, then later reached the original +2R Short target within the post-SL observation window.",
         "- The stop candle itself is excluded from post-SL reversal analysis because OHLC cannot reveal intrabar ordering after the stop.",
