@@ -1,0 +1,133 @@
+name: Crypto Short V4.2.7 Persistent Consensus
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen historical replay days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen crypto cohort size"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee reference in bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Slippage reference only"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v427_*.py"
+      - ".github/workflows/v427-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v427-persistent-consensus
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: freeze-v427-manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile V4.2.7
+        run: python -m compileall -q short_algo
+      - name: Freeze dataset
+        run: python -m short_algo.v4_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V427-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v427-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V427-Manifest
+          path: frozen
+      - name: Compile V4.2.7
+        run: python -m compileall -q short_algo
+      - name: Build V4.2.7 dataset
+        run: python -m short_algo.v427_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V427-Shard-${{ matrix.shard }}
+          path: |
+            output/v427_backtest.json
+            output/v427_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: merge-v427-results
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V427-Shard-*
+          path: shard_outputs
+      - name: Compile V4.2.7
+        run: python -m compileall -q short_algo
+      - name: Walk-forward persistent consensus + 2R entry
+        run: python -m short_algo.v427_merge shard_outputs
+      - name: Publish summary
+        run: cat output/v427_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V427-Backtest-Final
+          path: |
+            output/v427_backtest.json
+            output/v427_analysis.json
+            output/v427_model_meta.json
+            output/v427_manifest.json
+            output/v427_scored_candidates.csv
+            output/v427_summary.md
+          if-no-files-found: error
+          retention-days: 30
