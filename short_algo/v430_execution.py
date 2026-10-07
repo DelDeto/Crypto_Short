@@ -89,8 +89,9 @@ def classify_support(one_closed, four_closed, features):
         structural.append(price)
     result["v430_4h_pivot_count"] = len(structural)
 
-    minor = [p for _, p, _ in p1 if p < entry]
-    result["v430_1h_pivot_count"] = len(minor)
+    pivot_minor = [p for _, p, _ in p1 if p < entry]
+    minor = list(pivot_minor)
+    result["v430_1h_pivot_count"] = len(pivot_minor)
     reference_distance = _number(features.get("support_distance_atr"))
     if reference_distance is not None and reference_distance > 0:
         x = entry - reference_distance * atr
@@ -98,7 +99,9 @@ def classify_support(one_closed, four_closed, features):
             minor.append(x)
 
     intermediate = []
-    sorted_low = sorted(minor)
+    # Scanner support may be the *same* pivot; never count it as an
+    # independent second reaction when classifying INTERMEDIATE support.
+    sorted_low = sorted(pivot_minor)
     clusters = []
     # 0.35 ATR clusters with multiple separated pivot lows.
     for p in sorted_low:
@@ -289,6 +292,14 @@ def _simulate_b(features, future15, a_result):
         previous = future15.iloc[i - 1]
         bar = future15.iloc[i]
         highs.append(float(bar["high"]))
+        # B is an unfilled plan: cancel if the original zone is reclaimed or
+        # the first 2R move already happened before the proposed pullback.
+        if float(bar["close"]) > zone_upper + 0.12 * atr:
+            out["v430_B_state"] = "CANCEL_ZONE_RECLAIMED"
+            break
+        if float(bar["low"]) <= original_entry - 2.0 * old_risk:
+            out["v430_B_state"] = "CANCEL_SETUP_ALREADY_COMPLETED"
+            break
         if not _next_bar(future15, i):
             continue
         touched = float(bar["high"]) >= target and float(bar["low"]) <= zone_upper + 0.12 * atr
