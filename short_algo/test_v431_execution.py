@@ -74,7 +74,7 @@ class TestV431Execution(unittest.TestCase):
         rows = tail_rows()
         rows[0] = (101.2, 101.4, 100.5, 100.7)
         rows[1] = (100.7, 100.8, 99.8, 100.0)
-        rows[2] = (100.1, 100.3, 97.0, 97.5)
+        rows[2] = (100.1, 100.3, 96.5, 97.0)
         f = frame(rows)
         out = evaluate_v431_entries(features(), hist(), f, SUPPORT)
         self.assertEqual(out["v431_A3_entry_time"], f.index[2].isoformat())
@@ -103,7 +103,7 @@ class TestV431Execution(unittest.TestCase):
 
     def test_no_c_without_primary_stop(self):
         rows = tail_rows()
-        rows[0] = (100.0, 100.2, 96.0, 96.5)
+        rows[0] = (100.0, 100.2, 93.0, 94.5)
         f = frame(rows)
         out = evaluate_v431_entries(
             features(confirmed=1, stop=103.0), hist(), f, SUPPORT
