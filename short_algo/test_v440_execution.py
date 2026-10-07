@@ -48,7 +48,7 @@ class TestV440Execution(unittest.TestCase):
         self.assertIsNotNone(demand)
         self.assertLess(demand["upper"], 100.0)
 
-    def test_followthrough_failure_exits_causally(self):
+    def test_bos_reclaim_exits_causally(self):
         rows = [
             {"open": 100.0, "high": 100.2, "low": 99.9, "close": 100.05},
             {"open": 100.05, "high": 100.2, "low": 99.85, "close": 100.0},
