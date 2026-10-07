@@ -1,0 +1,134 @@
+name: Crypto Short V4.3.0 Execution A B C Research
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen replay window (smoke=60; use 180/360 only after review)"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp universe"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps assumption"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps assumption"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v430_*.py"
+      - "short_algo/test_v430_execution.py"
+      - ".github/workflows/v430-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v430-execution-research
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: test-and-freeze-v430
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and test causal execution rules
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v430_execution
+      - name: Freeze historical cohort
+        run: python -m short_algo.v4_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V430-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v430-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V430-Manifest
+          path: frozen
+      - name: Compile V4.3.0
+        run: python -m compileall -q short_algo
+      - name: Replay A/B/C on same timestamps
+        run: python -m short_algo.v430_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V430-Shard-${{ matrix.shard }}
+          path: |
+            output/v430_backtest.json
+            output/v430_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: compare-v430-execution
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V430-Shard-*
+          path: shard_outputs
+      - name: Walk-forward and execution metrics
+        run: python -m short_algo.v430_merge shard_outputs
+      - name: Publish run summary
+        run: cat output/v430_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V430-Backtest-Final
+          path: |
+            output/v430_backtest.json
+            output/v430_analysis.json
+            output/v430_model_meta.json
+            output/v430_manifest.json
+            output/v430_scored_candidates.csv
+            output/v430_summary.md
+          if-no-files-found: error
+          retention-days: 30
