@@ -14,7 +14,7 @@ import pandas as pd
 
 from .config import OUTPUT_DIR
 from .v428_merge import _add_cross_section_and_phase
-from .v429_merge import _walk_forward, _auc, SCORED_FIELDS as V429_SCORED
+from .v429_merge import _walk_forward, _auc, _rule_fields, SCORED_FIELDS as V429_SCORED
 from .v431_config import (
     V431_COOLDOWN_HOURS,
     V431_COST_BPS,
@@ -176,6 +176,64 @@ def _bundle(rows):
     }
 
 
+def _max_losing_streak(rows, sequence_key):
+    streak = 0
+    worst = 0
+    observed = 0
+    for row in sorted(
+        rows, key=lambda r: (str(r.get("signal_time")), str(r.get("symbol")))
+    ):
+        value = _num(row.get(sequence_key))
+        if value is None:
+            continue
+        observed += 1
+        if value < 0:
+            streak += 1
+            worst = max(worst, streak)
+        else:
+            streak = 0
+    return {"observed": observed, "max_losing_streak": worst}
+
+
+def _validation_bundle(rows):
+    bundle = _bundle(rows)
+    a2 = bundle["modes"]["A2"]
+    seq = bundle["sequences"]["A2"]
+    streak = _max_losing_streak(rows, "v431_A2_plus_C_net_r")
+    return {
+        "opportunities": len(rows),
+        "A2_primary": a2,
+        "A2_plus_C": seq,
+        "A2_plus_C_max_losing_streak": streak["max_losing_streak"],
+        "A2_plus_C_observed_sequences": streak["observed"],
+    }
+
+
+def _fixed_a2_gate(validation):
+    primary = validation["A2_primary"]
+    sequence = validation["A2_plus_C"]
+    checks = {
+        "sample_primary_fills_ge_30": int(primary.get("filled") or 0) >= 30,
+        "primary_tp2_pct_ge_40": (
+            primary.get("tp2r_first_pct") is not None
+            and float(primary["tp2r_first_pct"]) >= 40.0
+        ),
+        "sequence_net_exp_per_opportunity_gt_0_10r": (
+            sequence.get("sequence_net_expectancy_r_per_opportunity") is not None
+            and float(sequence["sequence_net_expectancy_r_per_opportunity"]) > 0.10
+        ),
+    }
+    return {
+        "candidate": "A2_PLUS_C_FIXED",
+        "checks": checks,
+        "pass": all(checks.values()),
+        "note": (
+            "Gate is evaluated only on the older ~300d validation slice. "
+            "The recent 60d slice is marked SEEN and cannot rescue a failed gate."
+        ),
+    }
+
+
 def _unique(rows, marker):
     last = {}
     selected = []
@@ -275,6 +333,35 @@ def _summary(report):
             f"{x['sequence_positive_pct']} |"
         )
 
+    split = a.get("validation_split")
+    if split:
+        old = split["older_300d_validation"]
+        seen = split["recent_60d_seen"]
+        oldp = old["A2_primary"]
+        olds = old["A2_plus_C"]
+        seenp = seen["A2_primary"]
+        seens = seen["A2_plus_C"]
+        lines += [
+            "",
+            "## Fixed A2+C 360d validation split",
+            f"- Split cutoff: {split['cutoff']}",
+            "- Older ~300d = PRIMARY VALIDATION. Recent 60d = SEEN during rule selection.",
+            "",
+            "| Slice | Core opp | A2 fills | A2 TP2% | A2 net R/fill | A2+C net R/opp | Seq positive% | Max losing streak |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+            f"| Older ~300d VALIDATION | {old['opportunities']} | {oldp['filled']} | "
+            f"{oldp['tp2r_first_pct']} | {oldp['net_expectancy_r_per_fill']} | "
+            f"{olds['sequence_net_expectancy_r_per_opportunity']} | "
+            f"{olds['sequence_positive_pct']} | {old['A2_plus_C_max_losing_streak']} |",
+            f"| Recent 60d SEEN | {seen['opportunities']} | {seenp['filled']} | "
+            f"{seenp['tp2r_first_pct']} | {seenp['net_expectancy_r_per_fill']} | "
+            f"{seens['sequence_net_expectancy_r_per_opportunity']} | "
+            f"{seens['sequence_positive_pct']} | {seen['A2_plus_C_max_losing_streak']} |",
+            "",
+            f"- Validation gate: {split['older_300d_gate']}",
+            f"- Unique-episode older validation: {split['older_300d_unique_validation']}",
+        ]
+
     lines += [
         "",
         "## Controls",
@@ -360,6 +447,60 @@ def merge_reports(reports):
         core_confirmed, "v431_unique_confirmed_episode"
     )
 
+    # Long-horizon execution validation is intentionally rule-only and uses
+    # every timestamp in the frozen 360d replay. ML walk-forward output remains
+    # diagnostic and cannot decide whether A2+C passes validation.
+    raw_rule_core = []
+    for row in rows:
+        (
+            _phase, _fresh, _structure, _strong, _touched, _confirmed,
+            _rr, _no_reclaim, _severe, core_preconfirm, _priority,
+        ) = _rule_fields(row)
+        if core_preconfirm:
+            raw_rule_core.append(row)
+
+    period_end_ts = pd.Timestamp(first.get("period_end"))
+    if period_end_ts.tzinfo is None:
+        period_end_ts = period_end_ts.tz_localize("UTC")
+    split_cutoff = period_end_ts - pd.Timedelta(days=60)
+    older_300 = [
+        r for r in raw_rule_core
+        if pd.Timestamp(r.get("signal_time")) < split_cutoff
+    ]
+    recent_60 = [
+        r for r in raw_rule_core
+        if pd.Timestamp(r.get("signal_time")) >= split_cutoff
+    ]
+
+    # De-overlap once across the entire chronology, then split; this avoids
+    # double-counting an episode that straddles the 300d/60d boundary.
+    raw_unique = _unique(
+        list(raw_rule_core), "v431_unique_validation_episode"
+    )
+    older_300_unique = [
+        r for r in raw_unique
+        if pd.Timestamp(r.get("signal_time")) < split_cutoff
+    ]
+    recent_60_unique = [
+        r for r in raw_unique
+        if pd.Timestamp(r.get("signal_time")) >= split_cutoff
+    ]
+
+    older_validation = _validation_bundle(older_300)
+    recent_seen = _validation_bundle(recent_60)
+    older_unique_validation = _validation_bundle(older_300_unique)
+    recent_unique_seen = _validation_bundle(recent_60_unique)
+    validation_split = {
+        "method": "fixed_A2_plus_C_no_retuning",
+        "cutoff": split_cutoff.isoformat(),
+        "older_300d_validation": older_validation,
+        "recent_60d_seen": recent_seen,
+        "older_300d_unique_validation": older_unique_validation,
+        "recent_60d_unique_seen": recent_unique_seen,
+        "older_300d_gate": _fixed_a2_gate(older_validation),
+        "older_300d_unique_gate": _fixed_a2_gate(older_unique_validation),
+    }
+
     counts_by_time = Counter(str(r.get("signal_time")) for r in scored)
     core_bundle = _bundle(core)
     analysis = {
@@ -382,6 +523,7 @@ def merge_reports(reports):
         "unique_core": _bundle(unique_core),
         "unique_confirmed": _bundle(unique_confirmed),
         "screening_leader": _screening_leader(core_bundle),
+        "validation_split": validation_split,
         "oos_auc_context_only": {
             "4h": _auc(scored, "p_4h_lower", "y_4h_lower"),
             "12h": _auc(scored, "p_12h_lower", "y_12h_lower"),
@@ -442,6 +584,7 @@ def main():
         "core_sequences": a["core"]["sequences"],
         "confirmed_same_opportunity": a["core_confirmed_same_opportunity"],
         "unique_core": a["unique_core"],
+        "validation_split": a["validation_split"],
         "oos_auc_context_only": a["oos_auc_context_only"],
     }, ensure_ascii=False, indent=2))
     return 0 if not report["errors"] else 2
