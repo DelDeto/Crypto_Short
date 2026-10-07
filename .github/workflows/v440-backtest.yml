@@ -1,0 +1,132 @@
+name: Crypto Short V4.4 Structural Confirmation 360d
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Frozen replay window"
+        required: true
+        default: "360"
+      symbol_limit:
+        description: "Frozen MEXC perp universe"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps assumption"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps assumption"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v440_*.py"
+      - "short_algo/test_v440_execution.py"
+      - ".github/workflows/v440-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v440-structural-research
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: test-and-freeze-v440
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '360' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and unit-test V4.4 execution
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v440_execution
+      - name: Freeze cohort
+        run: python -m short_algo.v4_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V440-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  backtest:
+    name: v440-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V440-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay fixed V4.4 structural entry
+        run: python -m short_algo.v440_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V440-Shard-${{ matrix.shard }}
+          path: |
+            output/v440_backtest.json
+            output/v440_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    name: validate-v440
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V440-Shard-*
+          path: shard_outputs
+      - name: Compare V4.3.1 A2 vs fixed V4.4
+        run: python -m short_algo.v440_merge shard_outputs
+      - name: Publish summary
+        run: cat output/v440_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V440-Backtest-Final
+          path: |
+            output/v440_backtest.json
+            output/v440_analysis.json
+            output/v440_manifest.json
+            output/v440_scored_candidates.csv
+            output/v440_summary.md
+          if-no-files-found: error
+          retention-days: 30
