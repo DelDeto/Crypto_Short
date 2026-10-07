@@ -69,7 +69,8 @@ class TestV440Execution(unittest.TestCase):
         out = _simulate_staged(
             fut, 0, 100.0, 102.0, 2.0, 96.0, 94.0, 3.0, 99.0, seed
         )
-        self.assertEqual(out["v440_state"], "FT_EXIT")
+        self.assertEqual(out["v440_state"], "FT_RECLAIM_EXIT")
+        self.assertEqual(out["v440_ft_state"], "FAIL_BOS_RECLAIM")
         self.assertEqual(out["v440_ft_pass"], 0)
 
     def test_tp1_then_demand_target(self):
