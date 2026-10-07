@@ -22,7 +22,8 @@ from .v430_main import CSV_FIELDS, _write_csv, _write_json
 
 EXTRA_SCORE_FIELDS = [
     f for f in V429_SCORED if f not in CSV_FIELDS
-] + ["v430_core_structure", "v430_research_status", "v430_unique_episode"]
+] + ["v430_core_structure", "v430_research_status", "v430_unique_early_episode",
+    "v430_unique_strict_episode"]
 SCORED_FIELDS = CSV_FIELDS + EXTRA_SCORE_FIELDS
 
 TERMINAL_STATES = ("TP2R_FIRST", "SL_FIRST", "SL_SAME_BAR", "TIME_EXIT")
@@ -146,7 +147,7 @@ def _paired(rows):
     }
 
 
-def _unique(rows, hours=V430_COOLDOWN_HOURS):
+def _unique(rows, hours=V430_COOLDOWN_HOURS, marker="v430_unique_early_episode"):
     """First eligible setup per symbol in a fixed time window, without using outcomes."""
     last = {}
     selected = []
@@ -155,9 +156,9 @@ def _unique(rows, hours=V430_COOLDOWN_HOURS):
         t = pd.Timestamp(row["signal_time"])
         previous = last.get(sym)
         if previous is not None and (t - previous) < pd.Timedelta(hours=int(hours)):
-            row["v430_unique_episode"] = 0
+            row[marker] = 0
             continue
-        row["v430_unique_episode"] = 1
+        row[marker] = 1
         last[sym] = t
         selected.append(row)
     return selected
@@ -311,10 +312,11 @@ def merge_reports(reports):
         else:
             status = "RESEARCH_WATCH"
         row["v430_research_status"] = status
-        row["v430_unique_episode"] = 0
+        row["v430_unique_early_episode"] = 0
+        row["v430_unique_strict_episode"] = 0
 
-    unique_strict = _unique(support_pass)
-    unique_early = _unique(early)
+    unique_strict = _unique(support_pass, marker="v430_unique_strict_episode")
+    unique_early = _unique(early, marker="v430_unique_early_episode")
     statuses = Counter(str(r["v430_research_status"]) for r in scored)
     counts_by_time = Counter(str(r["signal_time"]) for r in scored)
     analysis = {
