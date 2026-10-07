@@ -36,7 +36,7 @@ class TestV441Execution(unittest.TestCase):
                 "close": low + 1.2,
             })
         four = _frame(rows, "4h")
-        support = _structural_support(four, 100.0, 2.0)
+        support = _structural_support(four, 98.0, 2.0)
         self.assertIsNotNone(support)
         self.assertGreaterEqual(support["touches"], 2)
         self.assertAlmostEqual(support["level"], 95.05, delta=0.2)
