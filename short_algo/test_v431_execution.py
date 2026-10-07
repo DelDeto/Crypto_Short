@@ -8,7 +8,7 @@ from .v431_execution import evaluate_v431_entries, _simulate_trade
 
 def frame(rows, start="2026-06-01 00:00:00+00:00"):
     index = pd.date_range(start, periods=len(rows), freq="15min", tz="UTC")
-    return pd.DataFrame(rows, index=index)
+    return pd.DataFrame(rows, index=index, columns=["open", "high", "low", "close"])
 
 
 def tail_rows(count=120, value=100.8):
