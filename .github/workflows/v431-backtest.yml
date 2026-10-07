@@ -1,12 +1,12 @@
-name: Crypto Short V4.3.1 Micro Entry Research
+name: Crypto Short V4.3.1 A2+C 360d Validation
 
 on:
   workflow_dispatch:
     inputs:
       days:
-        description: "Frozen replay window; screen 60 before longer validation"
+        description: "Frozen replay window; fixed A2+C long validation"
         required: true
-        default: "60"
+        default: "360"
       symbol_limit:
         description: "Frozen MEXC perp universe"
         required: true
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '360' }}
       BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
     steps:
       - uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
     name: v431-shard-${{ matrix.shard }}
     needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
@@ -104,7 +104,7 @@ jobs:
     name: compare-v431-entry-timing
     needs: backtest
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -115,7 +115,7 @@ jobs:
         with:
           pattern: Crypto-Short-V431-Shard-*
           path: shard_outputs
-      - name: Compare entry policies and conditional C
+      - name: Validate fixed A2+C and split older 300d vs seen 60d
         run: python -m short_algo.v431_merge shard_outputs
       - name: Publish summary
         run: cat output/v431_summary.md >> "$GITHUB_STEP_SUMMARY"
