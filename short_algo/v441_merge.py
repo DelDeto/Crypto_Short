@@ -251,8 +251,7 @@ def _summary(report):
         "- No re-entry, martingale, stop widening, or future best-price selection.",
         "- Recent 60d cannot rescue a failed older-validation gate.",
     ]
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 
 def merge_reports(reports):
