@@ -29,8 +29,8 @@ class TestV446Execution(unittest.TestCase):
             {"open":99.5,"high":99.9,"low":99.2,"close":99.4},   # early touch
             {"open":99.4,"high":99.5,"low":99.0,"close":99.3},
             {"open":99.3,"high":99.4,"low":99.0,"close":99.2},
-            {"open":99.2,"high":99.85,"low":99.1,"close":99.35}, # 1h retest
-            {"open":99.35,"high":99.5,"low":99.0,"close":99.2},  # next open
+            {"open":99.7,"high":99.85,"low":99.1,"close":99.35}, # 1h bearish retest
+            {"open":99.45,"high":99.5,"low":99.0,"close":99.2},  # next open <=0.30ATR
             {"open":99.2,"high":99.4,"low":98.9,"close":99.1},
         ]
         sel = _select_retest_entry(_event(rows), "R1")
@@ -58,6 +58,8 @@ class TestV446Execution(unittest.TestCase):
             {"open":100.6,"high":100.7,"low":99.0,"close":99.2},
             {"open":99.2,"high":99.5,"low":98.9,"close":99.1},
             {"open":99.1,"high":99.8,"low":99.0,"close":99.3},
+            {"open":99.3,"high":99.5,"low":99.0,"close":99.2},
+            {"open":99.2,"high":99.4,"low":98.9,"close":99.1},
         ]
         sel = _select_retest_entry(_event(rows), "R1")
         self.assertEqual(sel["state"], "HARD_RECLAIM_INVALIDATED")
@@ -68,7 +70,7 @@ class TestV446Execution(unittest.TestCase):
             {"open":99.5,"high":99.6,"low":99.0,"close":99.4},
             {"open":99.4,"high":99.5,"low":99.0,"close":99.3},
             {"open":99.3,"high":99.4,"low":99.0,"close":99.2},
-            {"open":99.2,"high":99.85,"low":99.0,"close":99.3},
+            {"open":99.7,"high":99.85,"low":99.0,"close":99.3},
             {"open":99.5,"high":99.6,"low":99.0,"close":99.3},
         ]
         r1 = _select_retest_entry(_event(rows), "R1")
