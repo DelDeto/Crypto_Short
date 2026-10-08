@@ -1,17 +1,16 @@
 """V4.4.7 Persistent Broken Support Watch execution.
 
 State machine:
-  BREAK_DETECTED
-    -> BREAK_CONFIRMED (4H close below structural support)
+  BREAK_CONFIRMED (4H close below structural support)
     -> RECLAIM_WATCH (up to 7 days)
        -> RECLAIMED -> cancel
-       -> FAILED_RECLAIM -> SHORT_READY
+       -> FAILED_RECLAIM_TOUCH -> SHORT_READY
        -> PERSISTENT_NO_RECLAIM + LOWER_HIGH -> SHORT_READY
     -> 1H bearish confirmation
     -> next 15m open SHORT
 
-The event remains alive until reclaim, short-ready, or expiry. No fixed "enter
-N hours after break" rule is used.
+The event remains alive until reclaim, short-ready, or expiry. No fixed
+"enter N hours after break" rule is used.
 """
 import math
 
@@ -26,9 +25,9 @@ from .v441_execution import (
 )
 from .v445_execution import _plan_reason
 from .v447_config import (
-    V447_BREAK_BUFFER_ATR,\n    V447_BREAK_DETECT_HOURS,
+    V447_BREAK_BUFFER_ATR,
+    V447_BREAK_DETECT_HOURS,
     V447_ENTRY_CONFIRM_HOURS,
-    V447_HARD_RECLAIM_ATR if False else V447_RECLAIM_BUFFER_ATR,
     V447_LOWER_HIGH_BUFFER_ATR,
     V447_LOWER_HIGH_LOOKBACK_4H,
     V447_MAX_COST_R,
@@ -105,13 +104,17 @@ def _find_break_event(features, four_closed, future4h, signal_time):
     if rows is None or rows.empty:
         return None
 
+    detect_deadline = pd.Timestamp(signal_time) + pd.Timedelta(
+        hours=int(V447_BREAK_DETECT_HOURS)
+    )
     for i in range(len(rows)):
-        bar = rows.iloc[i]
-        vals = _bar_values(bar)
+        vals = _bar_values(rows.iloc[i])
         if vals is None:
             continue
         o, h, l, c = vals
         close_time = rows.index[i] + pd.Timedelta(hours=4)
+        if close_time > detect_deadline:
+            break
         if c < lower - float(V447_BREAK_BUFFER_ATR) * atr:
             return {
                 "support": support,
@@ -166,7 +169,10 @@ def _watch_reclaim(event, future4h):
         record = {
             "open_time": open_time,
             "close_time": close_time,
-            "open": o, "high": h, "low": l, "close": c,
+            "open": o,
+            "high": h,
+            "low": l,
+            "close": c,
         }
         records.append(record)
 
@@ -201,7 +207,10 @@ def _watch_reclaim(event, future4h):
                 and c < o
                 and (
                     upper_wick_ratio >= float(V447_MIN_REJECTION_WICK_RATIO)
-                    or (len(records) >= 2 and c < float(records[-2]["close"]))
+                    or (
+                        len(records) >= 2
+                        and c < float(records[-2]["close"])
+                    )
                 )
             )
             if failed_reclaim:
@@ -237,7 +246,9 @@ def _watch_reclaim(event, future4h):
                     "watch_hours": len(records) * 4,
                     "retest_attempts": retest_attempts,
                     "max_reclaim_high": max_reclaim_high,
-                    "ready_reclaim_high": max(float(x["high"]) for x in recent),
+                    "ready_reclaim_high": max(
+                        float(x["high"]) for x in recent
+                    ),
                     "bars_below": bars_below,
                     "lower_high_confirmed": 1,
                 }
@@ -297,8 +308,6 @@ def _find_1h_entry(watch, event, future1h, future15):
         pos = int(future15.index.searchsorted(close_time, side="left"))
         if pos >= len(future15):
             return {"state": "NO_15M_ENTRY_BAR"}
-        if future15.index[pos] < close_time:
-            continue
 
         entry = float(future15.iloc[pos]["open"])
         entry_below_atr = max(0.0, (lower - entry) / atr)
@@ -358,7 +367,9 @@ def evaluate_v447_m2(
     out.update({
         f"{prefix}_lifecycle": "BREAK_CONFIRMED",
         f"{prefix}_break_time": event["break_time"].isoformat(),
-        f"{prefix}_break_body_atr": round(float(event["break_body_atr"]), 4),
+        f"{prefix}_break_body_atr": round(
+            float(event["break_body_atr"]), 4
+        ),
         f"{prefix}_support_level": round(float(event["level"]), 10),
         f"{prefix}_support_lower": round(float(event["lower"]), 10),
         f"{prefix}_support_upper": round(float(event["upper"]), 10),
@@ -382,10 +393,14 @@ def evaluate_v447_m2(
             if watch.get("max_reclaim_high") is not None
             else None
         ),
-        f"{prefix}_lower_high_confirmed": watch.get("lower_high_confirmed"),
+        f"{prefix}_lower_high_confirmed": watch.get(
+            "lower_high_confirmed"
+        ),
     })
     if watch.get("state") != "SHORT_READY":
-        out[f"{prefix}_lifecycle"] = watch.get("state") or "WATCH_ENDED"
+        out[f"{prefix}_lifecycle"] = (
+            watch.get("state") or "WATCH_ENDED"
+        )
         out[f"{prefix}_state"] = watch.get("state") or "WATCH_ENDED"
         return out
 
@@ -395,7 +410,9 @@ def evaluate_v447_m2(
     )
     out[f"{prefix}_entry_selection_state"] = entry_plan.get("state")
     if entry_plan.get("state") != "ENTRY":
-        out[f"{prefix}_state"] = entry_plan.get("state") or "NO_ENTRY"
+        out[f"{prefix}_state"] = (
+            entry_plan.get("state") or "NO_ENTRY"
+        )
         return out
 
     atr = float(event["atr"])
@@ -438,7 +455,11 @@ def evaluate_v447_m2(
     risk = stop - entry
     target = float(demand["upper"]) + 0.10 * atr
     room_r = (entry - target) / risk
-    if target <= 0 or target >= entry or room_r < float(V447_MIN_ROOM_R):
+    if (
+        target <= 0
+        or target >= entry
+        or room_r < float(V447_MIN_ROOM_R)
+    ):
         out[f"{prefix}_state"] = "SKIP_ROOM_TO_DEMAND"
         return out
 
@@ -447,7 +468,9 @@ def evaluate_v447_m2(
     seed.update({
         f"{prefix}_state": "PLANNED",
         f"{prefix}_lifecycle": "ENTRY",
-        f"{prefix}_confirm_time": entry_plan["confirm_time"].isoformat(),
+        f"{prefix}_confirm_time": (
+            entry_plan["confirm_time"].isoformat()
+        ),
         f"{prefix}_entry_below_support_atr": round(
             float(entry_plan["entry_below_support_atr"]), 4
         ),
