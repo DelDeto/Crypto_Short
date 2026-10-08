@@ -26,7 +26,7 @@ from .v441_execution import (
 )
 from .v445_execution import _plan_reason
 from .v447_config import (
-    V447_BREAK_BUFFER_ATR,
+    V447_BREAK_BUFFER_ATR,\n    V447_BREAK_DETECT_HOURS,
     V447_ENTRY_CONFIRM_HOURS,
     V447_HARD_RECLAIM_ATR if False else V447_RECLAIM_BUFFER_ATR,
     V447_LOWER_HIGH_BUFFER_ATR,
