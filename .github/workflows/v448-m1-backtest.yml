@@ -1,4 +1,4 @@
-name: Crypto Short V4.4.8 M1 60d
+name: Crypto Short V4.4.8 M1 360d
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       days:
         description: "Signal-window days"
         required: true
-        default: "60"
+        default: "360"
       symbol_limit:
         description: "Frozen MEXC perp universe"
         required: true
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      V447_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      V447_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '360' }}
       BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
     steps:
       - uses: actions/checkout@v4
