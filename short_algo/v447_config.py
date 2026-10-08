@@ -15,15 +15,15 @@ import os
 V447_SCAN_CADENCE_HOURS = int(os.getenv("V447_SCAN_CADENCE_HOURS", "4"))
 V447_DAYS = int(os.getenv("V447_DAYS", "60"))
 
-# To validate the full 60d signal window while allowing a 7d watch plus a 4d
-# trade outcome, the manifest ends 11 days before "now" and fetches forward.
+# Full 60d signal window + enough future data for 7d watch and trade outcome.
 V447_WATCH_DAYS = int(os.getenv("V447_WATCH_DAYS", "7"))
 V447_HOLD_BUFFER_DAYS = int(os.getenv("V447_HOLD_BUFFER_DAYS", "4"))
 V447_FUTURE_BUFFER_DAYS = V447_WATCH_DAYS + V447_HOLD_BUFFER_DAYS
 V447_COOLDOWN_HOURS = int(os.getenv("V447_COOLDOWN_HOURS", "96"))
 
 # 4H structural break / zone.
-V447_BREAK_DETECT_HOURS = int(os.getenv("V447_BREAK_DETECT_HOURS", "8"))\nV447_BREAK_BUFFER_ATR = float(os.getenv("V447_BREAK_BUFFER_ATR", "0.05"))
+V447_BREAK_DETECT_HOURS = int(os.getenv("V447_BREAK_DETECT_HOURS", "8"))
+V447_BREAK_BUFFER_ATR = float(os.getenv("V447_BREAK_BUFFER_ATR", "0.05"))
 V447_RECLAIM_BUFFER_ATR = float(os.getenv("V447_RECLAIM_BUFFER_ATR", "0.10"))
 V447_RECLAIM_CONFIRM_4H = int(os.getenv("V447_RECLAIM_CONFIRM_4H", "2"))
 V447_RETEST_TOUCH_ATR = float(os.getenv("V447_RETEST_TOUCH_ATR", "0.20"))
@@ -32,12 +32,14 @@ V447_MIN_REJECTION_WICK_RATIO = float(
 )
 
 # Persistent no-reclaim branch.
-V447_PERSIST_MIN_4H_BARS = int(os.getenv("V447_PERSIST_MIN_4H_BARS", "6"))  # 24h
+V447_PERSIST_MIN_4H_BARS = int(os.getenv("V447_PERSIST_MIN_4H_BARS", "6"))
 V447_PERSIST_WINDOW_4H = int(os.getenv("V447_PERSIST_WINDOW_4H", "6"))
 V447_PERSIST_MIN_CLOSES_BELOW = int(
     os.getenv("V447_PERSIST_MIN_CLOSES_BELOW", "5")
 )
-V447_LOWER_HIGH_LOOKBACK_4H = int(os.getenv("V447_LOWER_HIGH_LOOKBACK_4H", "6"))
+V447_LOWER_HIGH_LOOKBACK_4H = int(
+    os.getenv("V447_LOWER_HIGH_LOOKBACK_4H", "6")
+)
 V447_LOWER_HIGH_BUFFER_ATR = float(
     os.getenv("V447_LOWER_HIGH_BUFFER_ATR", "0.05")
 )
