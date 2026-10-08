@@ -69,7 +69,7 @@ class TestV446Execution(unittest.TestCase):
             {"open":99.4,"high":99.5,"low":99.0,"close":99.3},
             {"open":99.3,"high":99.4,"low":99.0,"close":99.2},
             {"open":99.2,"high":99.85,"low":99.0,"close":99.3},
-            {"open":99.3,"high":99.4,"low":99.0,"close":99.3},
+            {"open":99.5,"high":99.6,"low":99.0,"close":99.3},
         ]
         r1 = _select_retest_entry(_event(rows), "R1")
         r2 = _select_retest_entry(_event(rows), "R2")
