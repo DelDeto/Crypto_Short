@@ -1,0 +1,131 @@
+name: Crypto Short V4.4.7 Persistent Broken Support 60d
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Signal-window days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp universe"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps assumption"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps assumption"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v447_*.py"
+      - "short_algo/test_v447_execution.py"
+      - ".github/workflows/v447-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v447-60d-persistent-watch
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: test-and-freeze-v447
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      V447_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and unit-test V4.4.7
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v447_execution
+      - name: Freeze lagged 60d signal cohort
+        run: python -m short_algo.v447_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V447-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    name: v447-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V447-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay persistent broken-support state machine
+        run: python -m short_algo.v447_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V447-Shard-${{ matrix.shard }}
+          path: |
+            output/v447_backtest.json
+            output/v447_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    name: validate-v447-persistent-watch
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V447-Shard-*
+          path: shard_outputs
+      - name: Validate persistent support-watch model
+        run: python -m short_algo.v447_merge shard_outputs
+      - run: cat output/v447_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V447-Backtest-Final
+          path: |
+            output/v447_backtest.json
+            output/v447_analysis.json
+            output/v447_manifest.json
+            output/v447_scored_candidates.csv
+            output/v447_summary.md
+          if-no-files-found: error
+          retention-days: 14
