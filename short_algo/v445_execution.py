@@ -103,7 +103,7 @@ def _m1_variant(
     prefix,
     future15,
     confirm_time,
-    sweep_high,
+    base_stop,
     demand_target,
     base_entry,
     atr,
@@ -123,7 +123,7 @@ def _m1_variant(
         future15 is None
         or future15.empty
         or _num(atr) is None
-        or _num(sweep_high) is None
+        or _num(base_stop) is None
         or _num(demand_target) is None
         or not confirm_time
     ):
@@ -160,10 +160,9 @@ def _m1_variant(
             return out
 
         entry = float(frame.iloc[j + 1]["open"])
-        stop = max(
-            float(sweep_high) + float(V445_M1_STOP_BUFFER_ATR) * atr,
-            entry + float(V445_M1_MIN_RISK_ATR) * atr,
-        )
+        # Hold the original structural stop fixed so this experiment isolates
+        # entry timing instead of quietly optimizing entry and stop together.
+        stop = float(base_stop)
         reason = _plan_reason(
             entry,
             stop,
@@ -232,7 +231,7 @@ def evaluate_m1_entry_lab(future15, strict, scored, atr):
                 prefix,
                 future15,
                 strict.get("v440_bos_time"),
-                strict.get("v440_sweep_high"),
+                strict.get("v440_stop"),
                 strict.get("v440_demand_target"),
                 strict.get("v440_entry"),
                 atr,
@@ -252,7 +251,7 @@ def evaluate_m1_entry_lab(future15, strict, scored, atr):
                 prefix,
                 future15,
                 scored.get("v441_m1_confirm_time"),
-                scored.get("v441_m1_sweep_high"),
+                scored.get("v441_m1_stop"),
                 scored.get("v441_m1_demand_target"),
                 scored.get("v441_m1_entry"),
                 atr,
