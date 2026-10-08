@@ -42,7 +42,7 @@ class TestV448M2Execution(unittest.TestCase):
             {"open":96.5,"high":97.5,"low":96,"close":97},
             {"open":97,"high":98,"low":96.5,"close":97.5},
             {"open":97.5,"high":98,"low":97,"close":97.5},
-            {"open":98,"high":99,"low":97.5,"close":98.5},
+            {"open":98,"high":98.4,"low":97.5,"close":98.2},
         ]
         out = _major_4h_demand(_frame(rows), entry=110.0, atr=2.0)
         self.assertIsNone(out)
