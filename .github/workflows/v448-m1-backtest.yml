@@ -1,0 +1,129 @@
+name: Crypto Short V4.4.8 M1 60d
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Signal-window days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp universe"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps assumption"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps assumption"
+        required: true
+        default: "6"
+
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v448_m1_*.py"
+      - ".github/workflows/v448-m1-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v448-m1
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: prepare-v448-m1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      V447_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile M1-only runner
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v443_filters
+      - name: Freeze independent M1 cohort
+        run: python -m short_algo.v447_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V448-M1-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    name: m1-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V448-M1-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay M1 only
+        run: python -m short_algo.v448_m1_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V448-M1-Shard-${{ matrix.shard }}
+          path: |
+            output/v448_m1_backtest.json
+            output/v448_m1_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    name: validate-v448-m1
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V448-M1-Shard-*
+          path: shard_outputs
+      - run: python -m short_algo.v448_m1_merge shard_outputs
+      - run: cat output/v448_m1_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V448-M1-Final
+          path: |
+            output/v448_m1_backtest.json
+            output/v448_m1_analysis.json
+            output/v448_m1_manifest.json
+            output/v448_m1_scored_candidates.csv
+            output/v448_m1_summary.md
+          if-no-files-found: error
+          retention-days: 14
