@@ -1,0 +1,130 @@
+name: Crypto Short V4.4.3 Episode + M2 Funnel 60d
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Fast research replay window"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp universe"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps assumption"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps assumption"
+        required: true
+        default: "6"
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v443_*.py"
+      - "short_algo/test_v443_filters.py"
+      - ".github/workflows/v443-backtest.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v443-60d-research
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: test-and-freeze-v443
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BACKTEST_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and unit-test V4.4.3 filters
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v443_filters
+      - name: Freeze 60d cohort
+        run: python -m short_algo.v4_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V443-Manifest
+          path: output/v4_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    name: v443-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V443-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay causal engines over 60d
+        run: python -m short_algo.v443_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V443-Shard-${{ matrix.shard }}
+          path: |
+            output/v443_backtest.json
+            output/v443_raw_candidates.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    name: validate-v443-episode-funnel
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V443-Shard-*
+          path: shard_outputs
+      - name: Analyze M1 episodes and M2 funnel
+        run: python -m short_algo.v443_merge shard_outputs
+      - run: cat output/v443_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V443-Backtest-Final
+          path: |
+            output/v443_backtest.json
+            output/v443_analysis.json
+            output/v443_manifest.json
+            output/v443_scored_candidates.csv
+            output/v443_summary.md
+          if-no-files-found: error
+          retention-days: 14
