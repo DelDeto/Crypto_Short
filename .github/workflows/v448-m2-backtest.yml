@@ -1,7 +1,7 @@
 name: Crypto Short V4.4.8 M2 60d
 
 on:
-  workflow_dispatch:
+  # Parallel validation: M2 remains fixed at the fast 60d window.\n  workflow_dispatch:
     inputs:
       days:
         description: "Signal-window days"
