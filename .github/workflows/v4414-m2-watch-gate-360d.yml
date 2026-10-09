@@ -1,0 +1,110 @@
+name: Crypto Short V4.4.14 M2 Watch Gate 360d
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v4414-m2-watch-gate-360d.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v4414-m2-watch-gate-360d
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: prepare-v4414-m2-360d
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      V4410_DAYS: "360"
+      BACKTEST_SYMBOL_LIMIT: "120"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and unit-test V4.4.14
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v4414_m2_execution
+      - name: Freeze 360d cohort
+        run: python -m short_algo.v4410_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-360D-Manifest
+          path: output/v4410_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    name: m2-v14-360d-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: "8"
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: "6"
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4410_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-360D-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay V4.4.14 causal watch-time gate over 360d
+        run: python -m short_algo.v4414_m2_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V4414-M2-360D-Shard-${{ matrix.shard }}
+          path: |
+            output/v4414_m2_backtest.json
+            output/v4414_m2_candidates.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    name: validate-v4414-m2-watch-gate-360d
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V4414-M2-360D-Shard-*
+          path: shard_outputs
+      - run: python -m short_algo.v4414_m2_merge shard_outputs
+      - run: cat output/v4414_m2_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-Watch-Gate-360D-Final
+          path: |
+            output/v4414_m2_backtest.json
+            output/v4414_m2_analysis.json
+            output/v4414_m2_manifest.json
+            output/v4414_m2_candidates.csv
+            output/v4414_m2_summary.md
+          if-no-files-found: error
+          retention-days: 14
