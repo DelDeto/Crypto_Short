@@ -11,6 +11,8 @@ from .config import (
     TOP_REPORT,
 )
 from .live_m2 import evaluate_live_symbol
+from .m2_prefilter import score_m2_prefilter
+from .indicators import return_pct, structure_snapshot
 from .mexc import (
     fetch_deep_frames,
     fetch_many_deep,
@@ -41,7 +43,37 @@ def _ticker_liquid_enough(ticker):
     return False
 
 
+def _market_risk_off_proxy(fast_frames):
+    btc = fast_frames.get("BTC_USDT")
+    eth = fast_frames.get("ETH_USDT")
+    if btc is None or eth is None:
+        return False, {"state": "UNKNOWN"}
+
+    bs = structure_snapshot(btc)
+    es = structure_snapshot(eth)
+    market_r4 = (return_pct(btc["close"], 4) + return_pct(eth["close"], 4)) / 2.0
+    market_r24 = (return_pct(btc["close"], 24) + return_pct(eth["close"], 24)) / 2.0
+    both_below = (
+        float(bs["close"]) < float(bs["ema20"])
+        and float(es["close"]) < float(es["ema20"])
+    )
+    risk_off = bool(market_r4 <= -0.8 and market_r24 <= 0.0 and both_below)
+    return risk_off, {
+        "state": "RISK_OFF" if risk_off else "NOT_RISK_OFF",
+        "market_r4_pct": round(market_r4, 3),
+        "market_r24_pct": round(market_r24, 3),
+        "btc_below_ema20": float(bs["close"]) < float(bs["ema20"]),
+        "eth_below_ema20": float(es["close"]) < float(es["ema20"]),
+    }
+
+
 def _select_deep(fast_rows, tickers):
+    """Allocate deep slots for M2, not generic V1 short ranking.
+
+    75%: highest M2 prefilter score.
+    15%: explicit recent-break/persistent-pressure reserve.
+    10%: legacy fast-score reserve to protect against proxy blind spots.
+    """
     selected = []
     seen = set()
 
@@ -50,45 +82,55 @@ def _select_deep(fast_rows, tickers):
             selected.append(symbol)
             seen.add(symbol)
 
+    primary_target = max(1, int(DEEP_LIMIT * 0.75))
+    pressure_target = max(primary_target, int(DEEP_LIMIT * 0.90))
+
     for row in sorted(
         fast_rows,
-        key=lambda x: (-float(x["fast_score"]), -float(x.get("turnover_24h") or 0.0)),
-    ):
-        add(row["symbol"])
-        if len(selected) >= max(1, int(DEEP_LIMIT * 0.65)):
-            break
-
-    fade_pool = []
-    for row in fast_rows:
-        symbol = row["symbol"]
-        ticker = tickers.get(symbol) or {}
-        change = float(row.get("ticker_change_24h_pct") or 0.0)
-        if change > 2.0 and _ticker_liquid_enough(ticker):
-            fade_pool.append(row)
-    for row in sorted(
-        fade_pool,
         key=lambda x: (
-            -float(x.get("ticker_change_24h_pct") or 0.0),
+            -float(x.get("m2_prefilter_score") or 0.0),
+            -float(x.get("m2_proxy_closes_below") or 0.0),
+            float(x.get("m2_proxy_near_support_atr") or 99.0),
             -float(x.get("turnover_24h") or 0.0),
         ),
     ):
         add(row["symbol"])
-        if len(selected) >= max(1, int(DEEP_LIMIT * 0.85)):
+        if len(selected) >= primary_target:
             break
 
-    breakdown_pool = [
+    pressure_pool = [
         row for row in fast_rows
-        if -18.0 <= float(row.get("return_12h_pct") or 0.0) <= -0.5
+        if row.get("m2_proxy_breakdown")
+        or float(row.get("m2_proxy_closes_below") or 0.0) >= 3
+        or float(row.get("m2_proxy_near_support_atr") or 99.0) <= 0.8
     ]
     for row in sorted(
-        breakdown_pool,
-        key=lambda x: (-float(x["fast_score"]), -float(x.get("turnover_24h") or 0.0)),
+        pressure_pool,
+        key=lambda x: (
+            -float(x.get("m2_proxy_breakdown") or 0),
+            -float(x.get("m2_proxy_closes_below") or 0.0),
+            -float(x.get("m2_prefilter_score") or 0.0),
+            -float(x.get("turnover_24h") or 0.0),
+        ),
+    ):
+        add(row["symbol"])
+        if len(selected) >= pressure_target:
+            break
+
+    # Small reserve for names that the new proxy may underrank. This protects
+    # coverage while live evidence accumulates.
+    for row in sorted(
+        fast_rows,
+        key=lambda x: (
+            -float(x.get("fast_score") or 0.0),
+            -float(x.get("turnover_24h") or 0.0),
+        ),
     ):
         add(row["symbol"])
         if len(selected) >= DEEP_LIMIT:
             break
-    return selected
 
+    return selected
 
 def _live_contexts():
     contexts = {}
@@ -114,10 +156,21 @@ def run_scan():
     ]
 
     fast_frames, fast_errors = fetch_many_fast(scan_symbols)
+    market_risk_off, market_prefilter_context = _market_risk_off_proxy(fast_frames)
+
     fast_rows = []
     for symbol, frame in fast_frames.items():
         try:
-            fast_rows.append(score_fast_short(symbol, frame, tickers.get(symbol) or {}))
+            row = score_fast_short(symbol, frame, tickers.get(symbol) or {})
+            row.update(
+                score_m2_prefilter(
+                    symbol,
+                    frame,
+                    tickers.get(symbol) or {},
+                    market_risk_off=market_risk_off,
+                )
+            )
+            fast_rows.append(row)
         except Exception as exc:
             fast_errors[symbol] = f"fast score: {exc}"
 
@@ -195,7 +248,8 @@ def run_scan():
         },
         "m2_live_signal_count": len(m2_live_signals),
         "deep_symbols": deep_symbols,
-        "results": results,
+        "m2_prefilter_context": market_prefilter_context,
+        "m2_prefilter_top": sorted(\n            fast_rows,\n            key=lambda x: -float(x.get("m2_prefilter_score") or 0.0),\n        )[:30],\n        "results": results,
         "m2_live_signals": m2_live_signals,
         "errors": {
             "fast": fast_errors,
