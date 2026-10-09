@@ -1,7 +1,9 @@
-name: Crypto Short Scanner V1
+name: Crypto Short M2 V4.4.18 Live
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "7 * * * *"
   push:
     branches: [main]
     paths:
@@ -10,20 +12,25 @@ on:
       - ".github/workflows/short-scan.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: crypto-short-scanner
+  group: crypto-short-m2-live
   cancel-in-progress: false
 
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
+    env:
+      DEEP_LIMIT: "120"
+      M2_LIVE_MAX_SIGNAL_AGE_MIN: "90"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -36,21 +43,41 @@ jobs:
       - name: Compile
         run: python -m compileall -q short_algo
 
-      - name: Run short market scan and Telegram notify
+      - name: Run M2 V4.4.18 live scan, outcome update and Telegram notify
         env:
           SHORT_TELEGRAM_BOT_TOKEN: ${{ secrets.SHORT_TELEGRAM_BOT_TOKEN }}
           SHORT_TELEGRAM_CHAT_ID: ${{ secrets.SHORT_TELEGRAM_CHAT_ID }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
         run: python -m short_algo.main
 
-      - name: Upload report
+      - name: Persist signal outcome ledger
+        if: always()
+        run: |
+          if [ ! -f state/m2_live_signals.json ]; then
+            echo "No M2 ledger to persist."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/m2_live_signals.json
+          if git diff --cached --quiet; then
+            echo "Ledger unchanged."
+            exit 0
+          fi
+          git commit -m "chore: update M2 live signal outcomes [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Upload live report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-Scanner-V1
+          name: Crypto-Short-M2-V4418-Live
           path: |
             output/short_scan.json
             output/short_scan.csv
+            output/m2_live_signals.csv
             output/short_scan.md
+            state/m2_live_signals.json
           if-no-files-found: warn
           retention-days: 30
