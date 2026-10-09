@@ -10,8 +10,7 @@ from .config import (
     OUTPUT_DIR,
     TOP_REPORT,
 )
-from .live_m2 import evaluate_live_symbol as evaluate_live_m2_symbol
-from .live_m3 import evaluate_live_symbol as evaluate_live_m3_symbol
+from .live_m2 import evaluate_live_symbol
 from .m2_prefilter import score_m2_prefilter
 from .indicators import return_pct, structure_snapshot
 from .mexc import (
@@ -208,7 +207,7 @@ def run_scan():
         for symbol, frames in deep_frames.items():
             try:
                 m2_live_signals.extend(
-                    evaluate_live_m2_symbol(
+                    evaluate_live_symbol(
                         symbol,
                         frames,
                         contexts["BTC_USDT"],
@@ -222,30 +221,6 @@ def run_scan():
         key=lambda x: (
             TIER_RANK.get(x.get("tier"), 9),
             x.get("entry_time") or "",
-        )
-    )
-
-    # M3 V3.2 is intentionally independent from M2. It reuses the already
-    # fetched deep frames to avoid changing M2's routing/admission behavior.
-    m3_live_signals = []
-    if contexts.get("BTC_USDT") is not None and contexts.get("ETH_USDT") is not None:
-        for symbol, frames in deep_frames.items():
-            try:
-                m3_live_signals.extend(
-                    evaluate_live_m3_symbol(
-                        symbol,
-                        frames,
-                        contexts["BTC_USDT"],
-                        contexts["ETH_USDT"],
-                    )
-                )
-            except Exception as exc:
-                deep_errors[symbol] = f"{deep_errors.get(symbol, '')} live-m3: {exc}".strip()
-
-    m3_live_signals.sort(
-        key=lambda x: (
-            {"A": 0, "B": 1, "C": 2}.get(x.get("tier"), 9),
-            x.get("signal_time") or "",
         )
     )
 
@@ -272,11 +247,6 @@ def run_scan():
             for tier in ("A+", "A", "B", "C")
         },
         "m2_live_signal_count": len(m2_live_signals),
-        "m3_live_counts": {
-            tier: sum(1 for row in m3_live_signals if row.get("tier") == tier)
-            for tier in ("A", "B", "C")
-        },
-        "m3_live_signal_count": len(m3_live_signals),
         "deep_symbols": deep_symbols,
         "m2_prefilter_context": market_prefilter_context,
         "m2_prefilter_top": sorted(
@@ -285,7 +255,6 @@ def run_scan():
         )[:30],
         "results": results,
         "m2_live_signals": m2_live_signals,
-        "m3_live_signals": m3_live_signals,
         "errors": {
             "fast": fast_errors,
             "deep": deep_errors,
@@ -312,7 +281,6 @@ def save_report(report):
     csv_path = os.path.join(OUTPUT_DIR, "short_scan.csv")
     md_path = os.path.join(OUTPUT_DIR, "short_scan.md")
     m2_csv_path = os.path.join(OUTPUT_DIR, "m2_live_signals.csv")
-    m3_csv_path = os.path.join(OUTPUT_DIR, "m3_v32_live_signals.csv")
 
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2, default=str)
@@ -345,20 +313,6 @@ def save_report(report):
         for row in report.get("m2_live_signals", []):
             writer.writerow({k: row.get(k) for k in m2_fields})
 
-    m3_fields = [
-        "signal_id","symbol","tier","status","signal_time","signal_age_minutes",
-        "entry_reference","entry_zone_low","entry_zone_high","invalidation","tp1","tp2",
-        "atr_1h","four_hour_bear_votes","impulse_atr","retrace_pct","pullback_zone",
-        "pullback_zone_level","failed_reclaim","bearish_rejection","lower_high",
-        "chase_distance_atr","confirm_15m","confirm_15m_break_low","market_state",
-        "market_r4_pct","market_r24_pct","max_hold_hours","cooldown_hours",
-    ]
-    with open(m3_csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=m3_fields)
-        writer.writeheader()
-        for row in report.get("m3_live_signals", []):
-            writer.writerow({k: row.get(k) for k in m3_fields})
-
     lines = [
         "# Crypto Short Scanner — M2 V4.4.18 Live",
         "",
@@ -367,9 +321,7 @@ def save_report(report):
         f"- Fast scan: {report['fast_success']}/{report['fast_requested']}",
         f"- Deep scan: {report['deep_success']}/{report['deep_requested']}",
         f"- Fresh M2 D+ signals: {report['m2_live_signal_count']}",
-        f"- M2 tiers: {report['m2_live_counts']}",
-        f"- Fresh M3 V3.2 candidates: {report.get('m3_live_signal_count', 0)}",
-        f"- M3 tiers: {report.get('m3_live_counts', {})}",
+        f"- Tiers: {report['m2_live_counts']}",
         "",
         "> Signal-performance research/live observation only. No auto-order.",
         "",
@@ -389,23 +341,6 @@ def save_report(report):
             "",
         ])
 
-    if report.get("m3_live_signals"):
-        lines.extend(["", "# M3 V3.2 — Intraday Bearish Pullback", ""])
-        for i, row in enumerate(report.get("m3_live_signals", [])[:TOP_REPORT], 1):
-            lines.extend([
-                f"## M3-{i}. {row['symbol']} — Tier {row['tier']} · {row['status']}",
-                "",
-                f"- Entry reference: {_fmt_price(row['entry_reference'])}",
-                f"- Entry zone: {_fmt_price(row['entry_zone_low'])} → {_fmt_price(row['entry_zone_high'])}",
-                f"- Invalidation: {_fmt_price(row['invalidation'])}",
-                f"- TP1/TP2 research refs: {_fmt_price(row['tp1'])} / {_fmt_price(row['tp2'])}",
-                f"- 4H bear votes: {row['four_hour_bear_votes']}/3 | impulse {row['impulse_atr']} ATR",
-                f"- Pullback: {row['pullback_zone']} | retrace {row['retrace_pct']}%",
-                f"- 15m confirm: {'Y' if row['confirm_15m'] else 'N'} | market {row['market_state']}",
-                f"- Max thesis horizon: {row['max_hold_hours']}h",
-                "",
-            ])
-
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
@@ -413,6 +348,5 @@ def save_report(report):
         "json": json_path,
         "csv": csv_path,
         "m2_csv": m2_csv_path,
-        "m3_csv": m3_csv_path,
         "markdown": md_path,
     }
