@@ -76,6 +76,67 @@ def _target_metrics(rows, tag):
     }
 
 
+def _quantile(values, q):
+    vals = [x for x in (_num(v) for v in values) if x is not None]
+    return round(float(np.quantile(vals, q)), 5) if vals else None
+
+
+def _path_hourly_summary(rows):
+    entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
+    by_hour = {h: [] for h in range(1, 25)}
+    for row in entries:
+        for point in row.get("m3_path_24h") or []:
+            hour = int(point.get("hour") or 0)
+            if hour in by_hour:
+                by_hour[hour].append(point)
+
+    summary = {}
+    for hour in range(1, 25):
+        points = by_hour[hour]
+        close_atr = [p.get("short_close_atr") for p in points]
+        close_r = [p.get("short_close_r") for p in points]
+        mfe_atr = [p.get("cum_mfe_atr") for p in points]
+        mae_atr = [p.get("cum_mae_atr") for p in points]
+
+        close_vals = [x for x in (_num(v) for v in close_atr) if x is not None]
+        summary[str(hour)] = {
+            "observations": len(points),
+            "close_favorable_pct": _pct(sum(x > 0 for x in close_vals), len(close_vals)),
+            "median_short_close_atr": _quantile(close_atr, 0.50),
+            "p25_short_close_atr": _quantile(close_atr, 0.25),
+            "p75_short_close_atr": _quantile(close_atr, 0.75),
+            "median_short_close_r": _quantile(close_r, 0.50),
+            "median_cum_mfe_atr": _quantile(mfe_atr, 0.50),
+            "median_cum_mae_atr": _quantile(mae_atr, 0.50),
+            "mfe_ge_0_5_atr_pct": _pct(
+                sum((_num(v) or 0.0) >= 0.5 for v in mfe_atr), len(points)
+            ),
+            "mfe_ge_1_0_atr_pct": _pct(
+                sum((_num(v) or 0.0) >= 1.0 for v in mfe_atr), len(points)
+            ),
+            "mfe_ge_1_5_atr_pct": _pct(
+                sum((_num(v) or 0.0) >= 1.5 for v in mfe_atr), len(points)
+            ),
+            "mfe_ge_2_0_atr_pct": _pct(
+                sum((_num(v) or 0.0) >= 2.0 for v in mfe_atr), len(points)
+            ),
+            "mae_ge_0_5_atr_pct": _pct(
+                sum((_num(v) or 0.0) >= 0.5 for v in mae_atr), len(points)
+            ),
+            "mae_ge_1_0_atr_pct": _pct(
+                sum((_num(v) or 0.0) >= 1.0 for v in mae_atr), len(points)
+            ),
+        }
+    return summary
+
+
+def _path_key_checkpoints(path_summary):
+    return {
+        str(h): path_summary.get(str(h))
+        for h in (1, 2, 4, 6, 8, 12, 18, 24)
+    }
+
+
 def _slice_metrics(rows, days):
     entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
     return {
@@ -101,7 +162,7 @@ def _slice_metrics(rows, days):
 def _summary(report):
     a = report["analysis"]
     lines = [
-        "# M3 V1 — Intraday Bearish Pullback Continuation",
+        "# M3 V1.1 — 24h Path Study",
         "",
         f"- Window: {report['period_start']} -> {report['period_end']}",
         f"- Symbols: {report['selected_symbol_count']}",
@@ -123,6 +184,11 @@ def _summary(report):
         f"- 1.0 ATR: {a['overall']['target_1_0_atr']}",
         f"- 1.5 ATR: {a['overall']['target_1_5_atr']}",
         f"- 2.0 ATR: {a['overall']['target_2_0_atr']}",
+        "",
+        "## 24h raw path study (uncensored by SL/TP)",
+        f"- Key checkpoints: {a['path_study']['key_checkpoints']}",
+        f"- Tier A checkpoints: {a['path_study']['tier_A_key_checkpoints']}",
+        f"- Tier B checkpoints: {a['path_study']['tier_B_key_checkpoints']}",
         "",
         "## Tier A",
         f"{a['tier_A']}",
@@ -191,6 +257,10 @@ def merge_reports(reports):
     neutral = [r for r in rows if r.get("m3_market_state") == "NEUTRAL"]
     risk_on = [r for r in rows if r.get("m3_market_state") == "RISK_ON_STRONG"]
 
+    overall_path = _path_hourly_summary(rows)
+    tier_a_path = _path_hourly_summary(tier_a)
+    tier_b_path = _path_hourly_summary(tier_b)
+
     analysis = {
         "overall": _slice_metrics(rows, days),
         "tier_A": _slice_metrics(tier_a, days),
@@ -198,13 +268,20 @@ def merge_reports(reports):
         "risk_off": _slice_metrics(risk_off, days),
         "neutral": _slice_metrics(neutral, days),
         "risk_on_strong": _slice_metrics(risk_on, days),
+        "path_study": {
+            "uncensored_after_sl_tp": True,
+            "hourly_1_to_24": overall_path,
+            "key_checkpoints": _path_key_checkpoints(overall_path),
+            "tier_A_key_checkpoints": _path_key_checkpoints(tier_a_path),
+            "tier_B_key_checkpoints": _path_key_checkpoints(tier_b_path),
+        },
         "research_status": "RESEARCH_ONLY",
         "model": "M3_INTRADAY_BEARISH_PULLBACK_CONTINUATION",
         "max_hold_hours": 24,
     }
 
     return {
-        "engine": "M3 V1 Intraday Bearish Pullback Continuation",
+        "engine": "M3 V1.1 Intraday Bearish Pullback Continuation + 24h Path Study",
         "manifest_id": next(iter(ids)),
         "manifest": first.get("manifest"),
         "manifest_integrity": integrity,
