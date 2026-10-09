@@ -1,0 +1,239 @@
+"""Merge and score M3 V1 research shards."""
+import json
+import os
+import sys
+from collections import Counter
+from glob import glob
+
+import numpy as np
+
+from .config import OUTPUT_DIR
+
+
+def _load(root):
+    reports = []
+    for path in sorted(glob(os.path.join(root, "**", "m3_v1_backtest.json"), recursive=True)):
+        with open(path, "r", encoding="utf-8") as f:
+            reports.append(json.load(f))
+    return reports
+
+
+def _num(x):
+    try:
+        y = float(x)
+        return y if np.isfinite(y) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _pct(n, d):
+    return round(100.0 * n / d, 2) if d else None
+
+
+def _pf(values):
+    gains = sum(x for x in values if x > 0)
+    losses = -sum(x for x in values if x < 0)
+    if losses <= 0:
+        return 999.0 if gains > 0 else None
+    return round(gains / losses, 4)
+
+
+def _mean(values):
+    vals = [x for x in (_num(v) for v in values) if x is not None]
+    return round(float(np.mean(vals)), 5) if vals else None
+
+
+def _target_metrics(rows, tag):
+    prefix = f"m3_t{tag}"
+    fills = [r for r in rows if _num(r.get(f"{prefix}_net_r")) is not None]
+    net = [float(r[f"{prefix}_net_r"]) for r in fills]
+    hold = [float(r.get(f"{prefix}_hold_bars") or 0) / 4.0 for r in fills]
+    return {
+        "fills": len(fills),
+        "positive": sum(x > 0 for x in net),
+        "positive_pct": _pct(sum(x > 0 for x in net), len(net)),
+        "target_hit_pct": _pct(
+            sum(r.get(f"{prefix}_state") == "TARGET" for r in fills),
+            len(fills),
+        ),
+        "stop_pct": _pct(
+            sum(str(r.get(f"{prefix}_state") or "").startswith("SL_FIRST") for r in fills),
+            len(fills),
+        ),
+        "time_exit_pct": _pct(
+            sum(r.get(f"{prefix}_state") == "TIME_EXIT_24H" for r in fills),
+            len(fills),
+        ),
+        "net_expectancy_r": _mean(net),
+        "profit_factor": _pf(net),
+        "total_net_r": round(sum(net), 5),
+        "avg_hold_hours": _mean(hold),
+        "avg_mfe_r": _mean([r.get(f"{prefix}_mfe_r") for r in fills]),
+        "avg_mae_r": _mean([r.get(f"{prefix}_mae_r") for r in fills]),
+        "states": dict(sorted(Counter(
+            str(r.get(f"{prefix}_state") or "NONE") for r in fills
+        ).items())),
+    }
+
+
+def _slice_metrics(rows, days):
+    entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
+    return {
+        "candidates": len(rows),
+        "candidates_per_day": round(len(rows) / max(float(days), 1.0), 3),
+        "benchmark_entries": len(entries),
+        "entries_per_day": round(len(entries) / max(float(days), 1.0), 3),
+        "tier_counts": dict(sorted(Counter(
+            str(r.get("m3_tier") or "NONE") for r in rows
+        ).items())),
+        "resistance_sources": dict(sorted(Counter(
+            str(r.get("m3_resistance_source") or "NONE") for r in rows
+        ).items())),
+        "market_states": dict(sorted(Counter(
+            str(r.get("m3_market_state") or "NONE") for r in rows
+        ).items())),
+        "target_1_0_atr": _target_metrics(entries, "1_0"),
+        "target_1_5_atr": _target_metrics(entries, "1_5"),
+        "target_2_0_atr": _target_metrics(entries, "2_0"),
+    }
+
+
+def _summary(report):
+    a = report["analysis"]
+    lines = [
+        "# M3 V1 — Intraday Bearish Pullback Continuation",
+        "",
+        f"- Window: {report['period_start']} -> {report['period_end']}",
+        f"- Symbols: {report['selected_symbol_count']}",
+        f"- Errors: {len(report['errors'])}",
+        f"- Integrity: {'PASS' if report['manifest_integrity']['ok'] else 'FAIL'}",
+        "",
+        "## Goal",
+        "- More opportunities than M2, maximum benchmark hold 24h.",
+        "- User remains the live entry/exit decision maker; benchmark entry is only for research.",
+        "",
+        "## Overall",
+        f"- Candidates: {a['overall']['candidates']} ({a['overall']['candidates_per_day']}/day)",
+        f"- Benchmark entries: {a['overall']['benchmark_entries']} ({a['overall']['entries_per_day']}/day)",
+        f"- Tier counts: {a['overall']['tier_counts']}",
+        f"- Resistance sources: {a['overall']['resistance_sources']}",
+        f"- Market states: {a['overall']['market_states']}",
+        "",
+        "## Target comparison",
+        f"- 1.0 ATR: {a['overall']['target_1_0_atr']}",
+        f"- 1.5 ATR: {a['overall']['target_1_5_atr']}",
+        f"- 2.0 ATR: {a['overall']['target_2_0_atr']}",
+        "",
+        "## Tier A",
+        f"{a['tier_A']}",
+        "",
+        "## Tier B",
+        f"{a['tier_B']}",
+        "",
+        "## Regime slices",
+        f"- Risk-Off: {a['risk_off']}",
+        f"- Neutral: {a['neutral']}",
+        f"- Strong Risk-On: {a['risk_on_strong']}",
+        "",
+        "RESEARCH ONLY — do not promote thresholds from this same sample without a later validation run.",
+    ]
+    return "\n".join(lines)
+
+
+def merge_reports(reports):
+    if not reports:
+        raise RuntimeError("No M3 V1 shard reports found")
+
+    expected = max(int(r.get("shard_count") or 1) for r in reports)
+    found = {int(r.get("shard_index")) for r in reports}
+    if found != set(range(expected)):
+        raise RuntimeError(f"Incomplete M3 V1 shards: {sorted(found)}")
+
+    ids = {str(r.get("manifest_id")) for r in reports}
+    if len(ids) != 1:
+        raise RuntimeError("M3 V1 manifest mismatch")
+
+    first = reports[0]
+    frozen = set((first.get("manifest") or {}).get("symbols") or [])
+    symbols, rows, errors = [], [], []
+    for report in reports:
+        symbols.extend(report.get("selected_symbols") or [])
+        rows.extend(report.get("candidates") or [])
+        errors.extend(report.get("errors") or [])
+
+    unique_symbols = set(symbols)
+    integrity = {
+        "ok": (
+            len(reports) == expected
+            and len(symbols) == len(unique_symbols)
+            and unique_symbols == frozen
+        ),
+        "expected_shards": expected,
+        "found_shards": len(reports),
+        "frozen_symbol_count": len(frozen),
+        "merged_symbol_count": len(unique_symbols),
+    }
+    if not integrity["ok"]:
+        raise RuntimeError(f"M3 V1 integrity failure: {integrity}")
+
+    dedup = {}
+    for row in rows:
+        dedup.setdefault((row.get("symbol"), row.get("signal_time")), row)
+    rows = sorted(
+        dedup.values(),
+        key=lambda r: (str(r.get("signal_time")), str(r.get("symbol"))),
+    )
+
+    days = int(first.get("days") or 60)
+    tier_a = [r for r in rows if r.get("m3_tier") == "A"]
+    tier_b = [r for r in rows if r.get("m3_tier") == "B"]
+    risk_off = [r for r in rows if r.get("m3_market_state") == "RISK_OFF"]
+    neutral = [r for r in rows if r.get("m3_market_state") == "NEUTRAL"]
+    risk_on = [r for r in rows if r.get("m3_market_state") == "RISK_ON_STRONG"]
+
+    analysis = {
+        "overall": _slice_metrics(rows, days),
+        "tier_A": _slice_metrics(tier_a, days),
+        "tier_B": _slice_metrics(tier_b, days),
+        "risk_off": _slice_metrics(risk_off, days),
+        "neutral": _slice_metrics(neutral, days),
+        "risk_on_strong": _slice_metrics(risk_on, days),
+        "research_status": "RESEARCH_ONLY",
+        "model": "M3_INTRADAY_BEARISH_PULLBACK_CONTINUATION",
+        "max_hold_hours": 24,
+    }
+
+    return {
+        "engine": "M3 V1 Intraday Bearish Pullback Continuation",
+        "manifest_id": next(iter(ids)),
+        "manifest": first.get("manifest"),
+        "manifest_integrity": integrity,
+        "period_start": first.get("period_start"),
+        "period_end": first.get("period_end"),
+        "future_end": first.get("future_end"),
+        "days": days,
+        "selected_symbol_count": len(unique_symbols),
+        "errors": errors,
+        "analysis": analysis,
+        "candidates": rows,
+    }
+
+
+def main(root="shard_outputs"):
+    reports = _load(root)
+    merged = merge_reports(reports)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    with open(os.path.join(OUTPUT_DIR, "m3_v1_analysis.json"), "w", encoding="utf-8") as f:
+        json.dump(merged, f, ensure_ascii=False, indent=2, default=str)
+    with open(os.path.join(OUTPUT_DIR, "m3_v1_summary.md"), "w", encoding="utf-8") as f:
+        f.write(_summary(merged))
+    with open(os.path.join(OUTPUT_DIR, "m3_v1_manifest.json"), "w", encoding="utf-8") as f:
+        json.dump(merged.get("manifest"), f, ensure_ascii=False, indent=2)
+
+    print(json.dumps(merged["analysis"], ensure_ascii=False, indent=2, default=str))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "shard_outputs"))
