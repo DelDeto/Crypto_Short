@@ -1,4 +1,4 @@
-name: Crypto Short M2 + M3 Hourly Scheduler
+name: Crypto Short M2 Hourly Scheduler
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: crypto-short-m2-m3-live
+  group: crypto-short-m2-live
   cancel-in-progress: false
 
 jobs:
@@ -37,29 +37,28 @@ jobs:
       - name: Compile
         run: python -m compileall -q short_algo
 
-      - name: Run hourly M2 V4.4.18 + M3 V3.2 live scan
+      - name: Run hourly M2 V4.4.18 live scan
         env:
           SHORT_TELEGRAM_BOT_TOKEN: ${{ secrets.SHORT_TELEGRAM_BOT_TOKEN }}
           SHORT_TELEGRAM_CHAT_ID: ${{ secrets.SHORT_TELEGRAM_CHAT_ID }}
           TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUPID }}
         run: python -m short_algo.main
 
-      - name: Persist signal outcome ledgers
+      - name: Persist signal outcome ledger
         if: always()
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ -f state/m2_live_signals.json ]; then
-            git add state/m2_live_signals.json
-          fi
-          if [ -f state/m3_v32_signals.json ]; then
-            git add state/m3_v32_signals.json
-          fi
-          if git diff --cached --quiet; then
-            echo "Ledgers unchanged."
+          if [ ! -f state/m2_live_signals.json ]; then
+            echo "No M2 ledger to persist."
             exit 0
           fi
-          git commit -m "chore: update M2/M3 live signal outcomes [skip ci]"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/m2_live_signals.json
+          if git diff --cached --quiet; then
+            echo "Ledger unchanged."
+            exit 0
+          fi
+          git commit -m "chore: update M2 live signal outcomes [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
 
@@ -67,14 +66,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Crypto-Short-M2-M3-Hourly
+          name: Crypto-Short-M2-Hourly
           path: |
             output/short_scan.json
             output/short_scan.csv
             output/m2_live_signals.csv
-            output/m3_v32_live_signals.csv
             output/short_scan.md
             state/m2_live_signals.json
-            state/m3_v32_signals.json
           if-no-files-found: warn
           retention-days: 30
