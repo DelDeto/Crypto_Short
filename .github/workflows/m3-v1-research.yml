@@ -1,0 +1,124 @@
+name: Crypto Short M3 V1 Research 60d
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Research window days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp cohort"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps"
+        required: true
+        default: "6"
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/m3_v1_*.py"
+      - ".github/workflows/m3-v1-research.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-m3-v1-research
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: prepare-m3-v1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      M3_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile M3 V1
+        run: python -m compileall -q short_algo
+      - name: Freeze M3 cohort
+        run: python -m short_algo.m3_v1_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-M3-V1-Manifest
+          path: output/m3_v1_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    name: m3-v1-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      M3_MANIFEST_PATH: "frozen/m3_v1_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-M3-V1-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay M3 V1
+        run: python -m short_algo.m3_v1_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-M3-V1-Shard-${{ matrix.shard }}
+          path: |
+            output/m3_v1_backtest.json
+            output/m3_v1_candidates.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    name: analyze-m3-v1
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-M3-V1-Shard-*
+          path: shard_outputs
+      - run: python -m short_algo.m3_v1_merge shard_outputs
+      - run: cat output/m3_v1_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-M3-V1-Final
+          path: |
+            output/m3_v1_analysis.json
+            output/m3_v1_manifest.json
+            output/m3_v1_summary.md
+          if-no-files-found: error
+          retention-days: 14
