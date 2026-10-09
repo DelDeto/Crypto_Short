@@ -116,7 +116,7 @@ def update_outcomes(ledger, now=None):
             entry_time = pd.Timestamp(signal["entry_time"])
             if entry_time.tzinfo is None:
                 entry_time = entry_time.tz_localize("UTC")
-            end = min(now_ts, entry_time + pd.Timedelta(hours=97))
+            closed_end = now_ts.floor("15min") - pd.Timedelta(minutes=15)\n            end = min(closed_end, entry_time + pd.Timedelta(hours=97))\n            if end < entry_time:\n                continue
             frame = get_klines_window(
                 signal["symbol"], "15m", entry_time, end
             )
