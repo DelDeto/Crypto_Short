@@ -138,6 +138,118 @@ def _path_key_checkpoints(path_summary):
     }
 
 
+def _quality_metrics(rows):
+    entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
+    labels = Counter(str(r.get("m3_entry_quality_label") or "UNKNOWN") for r in entries)
+    n = len(entries)
+    return {
+        "entries": n,
+        "labels": dict(sorted(labels.items())),
+        "clean_pct": _pct(labels.get("CLEAN", 0), n),
+        "good_or_clean_pct": _pct(labels.get("CLEAN", 0) + labels.get("GOOD", 0), n),
+        "bad_pct": _pct(labels.get("BAD", 0), n),
+        "no_follow_through_pct": _pct(labels.get("NO_FOLLOW_THROUGH", 0), n),
+        "median_preprofit_mae_1atr": _quantile(
+            [r.get("m3_preprofit_mae_1atr") for r in entries], 0.50
+        ),
+        "p75_preprofit_mae_1atr": _quantile(
+            [r.get("m3_preprofit_mae_1atr") for r in entries], 0.75
+        ),
+        "median_preprofit_mae_1_5atr": _quantile(
+            [r.get("m3_preprofit_mae_1_5atr") for r in entries], 0.50
+        ),
+        "favorable_first_0_5_pct": _pct(
+            sum(r.get("m3_first_0_5atr_side") == "FAVORABLE_FIRST" for r in entries), n
+        ),
+        "favorable_first_1_0_pct": _pct(
+            sum(r.get("m3_first_1_0atr_side") == "FAVORABLE_FIRST" for r in entries), n
+        ),
+        "favorable_first_1_5_pct": _pct(
+            sum(r.get("m3_first_1_5atr_side") == "FAVORABLE_FIRST" for r in entries), n
+        ),
+        "favorable_first_2_0_pct": _pct(
+            sum(r.get("m3_first_2_0atr_side") == "FAVORABLE_FIRST" for r in entries), n
+        ),
+        "median_minutes_to_1atr_when_favorable_first": _quantile(
+            [
+                r.get("m3_first_1_0atr_minutes")
+                for r in entries
+                if r.get("m3_first_1_0atr_side") == "FAVORABLE_FIRST"
+            ],
+            0.50,
+        ),
+        "median_24h_max_favorable_atr": _quantile(
+            [r.get("m3_24h_max_favorable_atr") for r in entries], 0.50
+        ),
+        "median_24h_max_adverse_atr": _quantile(
+            [r.get("m3_24h_max_adverse_atr") for r in entries], 0.50
+        ),
+    }
+
+
+def _feature_profile(rows):
+    entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
+    return {
+        "n": len(entries),
+        "impulse_atr_median": _quantile([r.get("m3_impulse_atr") for r in entries], 0.50),
+        "pullback_retrace_median": _quantile([r.get("m3_pullback_retrace") for r in entries], 0.50),
+        "pullback_bars_median": _quantile([r.get("m3_pullback_bars") for r in entries], 0.50),
+        "resistance_distance_atr_median": _quantile(
+            [r.get("m3_resistance_distance_atr") for r in entries], 0.50
+        ),
+        "ema20_distance_atr_median": _quantile(
+            [r.get("m3_ema20_distance_atr") for r in entries], 0.50
+        ),
+        "risk_atr_median": _quantile([r.get("m3_risk_atr") for r in entries], 0.50),
+        "four_h_bear_score_mean": _mean([r.get("m3_4h_bear_score") for r in entries]),
+        "failed_reclaim_pct": _pct(sum(int(r.get("m3_failed_reclaim") or 0) for r in entries), len(entries)),
+        "bearish_rejection_pct": _pct(sum(int(r.get("m3_bearish_rejection") or 0) for r in entries), len(entries)),
+        "lower_high_proxy_pct": _pct(sum(int(r.get("m3_lower_high_proxy") or 0) for r in entries), len(entries)),
+    }
+
+
+def _bucket_quality(rows, key_fn):
+    buckets = {}
+    for row in rows:
+        if row.get("m3_state") != "ENTRY_BENCHMARK":
+            continue
+        key = str(key_fn(row))
+        buckets.setdefault(key, []).append(row)
+    return {
+        key: {
+            "quality": _quality_metrics(vals),
+            "profile": _feature_profile(vals),
+        }
+        for key, vals in sorted(buckets.items())
+    }
+
+
+def _retrace_bucket(row):
+    x = _num(row.get("m3_pullback_retrace"))
+    if x is None:
+        return "UNKNOWN"
+    if x < 0.30:
+        return "LT_0_30"
+    if x < 0.45:
+        return "0_30_0_45"
+    if x < 0.60:
+        return "0_45_0_60"
+    return "GE_0_60"
+
+
+def _impulse_bucket(row):
+    x = _num(row.get("m3_impulse_atr"))
+    if x is None:
+        return "UNKNOWN"
+    if x < 1.5:
+        return "1_2_1_5"
+    if x < 2.0:
+        return "1_5_2_0"
+    if x < 3.0:
+        return "2_0_3_0"
+    return "GE_3_0"
+
+
 def _slice_metrics(rows, days):
     entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
     return {
@@ -163,7 +275,7 @@ def _slice_metrics(rows, days):
 def _summary(report):
     a = report["analysis"]
     lines = [
-        "# M3 V1.1 — 24h Path Study",
+        "# M3 V1.2 — Entry Quality Study",
         "",
         f"- Window: {report['period_start']} -> {report['period_end']}",
         f"- Symbols: {report['selected_symbol_count']}",
@@ -190,6 +302,16 @@ def _summary(report):
         f"- Key checkpoints: {a['path_study']['key_checkpoints']}",
         f"- Tier A checkpoints: {a['path_study']['tier_A_key_checkpoints']}",
         f"- Tier B checkpoints: {a['path_study']['tier_B_key_checkpoints']}",
+        "",
+        "## Entry quality study",
+        f"- Overall: {a['entry_quality_study']['overall']}",
+        f"- Tier A: {a['entry_quality_study']['tier_A']}",
+        f"- Tier B: {a['entry_quality_study']['tier_B']}",
+        f"- Clean profile: {a['entry_quality_study']['clean_profile']}",
+        f"- Bad profile: {a['entry_quality_study']['bad_profile']}",
+        f"- By resistance: {a['entry_quality_study']['by_resistance_source']}",
+        f"- By retrace: {a['entry_quality_study']['by_retrace']}",
+        f"- By impulse: {a['entry_quality_study']['by_impulse']}",
         "",
         "## Tier A",
         f"{a['tier_A']}",
@@ -262,6 +384,12 @@ def merge_reports(reports):
     tier_a_path = _path_hourly_summary(tier_a)
     tier_b_path = _path_hourly_summary(tier_b)
 
+    quality_entries = [r for r in rows if r.get("m3_state") == "ENTRY_BENCHMARK"]
+    clean_rows = [r for r in quality_entries if r.get("m3_entry_quality_label") == "CLEAN"]
+    good_rows = [r for r in quality_entries if r.get("m3_entry_quality_label") == "GOOD"]
+    bad_rows = [r for r in quality_entries if r.get("m3_entry_quality_label") == "BAD"]
+    no_ft_rows = [r for r in quality_entries if r.get("m3_entry_quality_label") == "NO_FOLLOW_THROUGH"]
+
     analysis = {
         "overall": _slice_metrics(rows, days),
         "tier_A": _slice_metrics(tier_a, days),
@@ -276,13 +404,34 @@ def merge_reports(reports):
             "tier_A_key_checkpoints": _path_key_checkpoints(tier_a_path),
             "tier_B_key_checkpoints": _path_key_checkpoints(tier_b_path),
         },
+        "entry_quality_study": {
+            "label_rules": {
+                "CLEAN": "Favorable +1ATR first and pre-profit MAE <=0.50ATR",
+                "GOOD": "Favorable +1.5ATR first and pre-profit MAE <=0.75ATR",
+                "BAD": "Adverse/Same-bar 1ATR first or pre-profit MAE >=1ATR",
+                "NO_FOLLOW_THROUGH": "Did not reach +1ATR favorable within 24h",
+                "MIXED": "Reached +1ATR but did not meet clean/good/bad definitions",
+            },
+            "overall": _quality_metrics(rows),
+            "tier_A": _quality_metrics(tier_a),
+            "tier_B": _quality_metrics(tier_b),
+            "clean_profile": _feature_profile(clean_rows),
+            "good_profile": _feature_profile(good_rows),
+            "bad_profile": _feature_profile(bad_rows),
+            "no_follow_through_profile": _feature_profile(no_ft_rows),
+            "by_resistance_source": _bucket_quality(rows, lambda r: r.get("m3_resistance_source") or "UNKNOWN"),
+            "by_market_state": _bucket_quality(rows, lambda r: r.get("m3_market_state") or "UNKNOWN"),
+            "by_4h_bear_score": _bucket_quality(rows, lambda r: int(r.get("m3_4h_bear_score") or 0)),
+            "by_retrace": _bucket_quality(rows, _retrace_bucket),
+            "by_impulse": _bucket_quality(rows, _impulse_bucket),
+        },
         "research_status": "RESEARCH_ONLY",
         "model": "M3_INTRADAY_BEARISH_PULLBACK_CONTINUATION",
         "max_hold_hours": 24,
     }
 
     return {
-        "engine": "M3 V1.1 Intraday Bearish Pullback Continuation + 24h Path Study",
+        "engine": "M3 V1.2 Intraday Bearish Pullback Continuation + Entry Quality Study",
         "manifest_id": next(iter(ids)),
         "manifest": first.get("manifest"),
         "manifest_integrity": integrity,
@@ -295,6 +444,32 @@ def merge_reports(reports):
         "analysis": analysis,
         "candidates": rows,
     }
+
+
+def _write_entry_quality_csv(path, rows):
+    fields = [
+        "symbol", "signal_time", "m3_entry_time", "m3_tier", "m3_market_state",
+        "m3_resistance_source", "m3_4h_bear_score", "m3_impulse_atr",
+        "m3_pullback_retrace", "m3_pullback_bars",
+        "m3_resistance_distance_atr", "m3_ema20_distance_atr",
+        "m3_failed_reclaim", "m3_bearish_rejection", "m3_lower_high_proxy",
+        "m3_entry", "m3_stop", "m3_risk_atr",
+        "m3_entry_quality_label", "m3_preprofit_mae_1atr",
+        "m3_preprofit_mae_1_5atr", "m3_24h_max_favorable_atr",
+        "m3_24h_max_adverse_atr", "m3_reached_1atr_24h",
+        "m3_reached_1_5atr_24h",
+        "m3_first_0_5atr_side", "m3_first_0_5atr_minutes",
+        "m3_first_1_0atr_side", "m3_first_1_0atr_minutes",
+        "m3_first_1_5atr_side", "m3_first_1_5atr_minutes",
+        "m3_first_2_0atr_side", "m3_first_2_0atr_minutes",
+    ]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        for row in rows:
+            if row.get("m3_state") != "ENTRY_BENCHMARK":
+                continue
+            writer.writerow({k: row.get(k) for k in fields})
 
 
 def _write_path_points_csv(path, rows):
@@ -338,6 +513,10 @@ def main(root="shard_outputs"):
         json.dump(merged.get("manifest"), f, ensure_ascii=False, indent=2)
     _write_path_points_csv(
         os.path.join(OUTPUT_DIR, "m3_v11_path_points.csv"),
+        merged.get("candidates") or [],
+    )
+    _write_entry_quality_csv(
+        os.path.join(OUTPUT_DIR, "m3_v12_entry_quality.csv"),
         merged.get("candidates") or [],
     )
 
