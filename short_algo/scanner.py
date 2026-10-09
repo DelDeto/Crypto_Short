@@ -10,7 +10,9 @@ from .config import (
     OUTPUT_DIR,
     TOP_REPORT,
 )
+from .live_m2 import evaluate_live_symbol
 from .mexc import (
+    fetch_deep_frames,
     fetch_many_deep,
     fetch_many_fast,
     get_all_tickers,
@@ -25,6 +27,8 @@ STATUS_RANK = {
     "WATCH": 2,
     "IGNORE": 3,
 }
+
+TIER_RANK = {"A+": 0, "A": 1, "B": 2, "C": 3}
 
 
 def _ticker_liquid_enough(ticker):
@@ -46,7 +50,6 @@ def _select_deep(fast_rows, tickers):
             selected.append(symbol)
             seen.add(symbol)
 
-    # Core pool: highest short-specific fast score.
     for row in sorted(
         fast_rows,
         key=lambda x: (-float(x["fast_score"]), -float(x.get("turnover_24h") or 0.0)),
@@ -55,8 +58,6 @@ def _select_deep(fast_rows, tickers):
         if len(selected) >= max(1, int(DEEP_LIMIT * 0.65)):
             break
 
-    # Fade reserve: liquid coins that pumped, because a good short often appears
-    # after a failed push rather than after an already completed dump.
     fade_pool = []
     for row in fast_rows:
         symbol = row["symbol"]
@@ -75,8 +76,6 @@ def _select_deep(fast_rows, tickers):
         if len(selected) >= max(1, int(DEEP_LIMIT * 0.85)):
             break
 
-    # Breakdown reserve: moderate bearish momentum, explicitly avoiding the
-    # most overextended names.
     breakdown_pool = [
         row for row in fast_rows
         if -18.0 <= float(row.get("return_12h_pct") or 0.0) <= -0.5
@@ -88,8 +87,19 @@ def _select_deep(fast_rows, tickers):
         add(row["symbol"])
         if len(selected) >= DEEP_LIMIT:
             break
-
     return selected
+
+
+def _live_contexts():
+    contexts = {}
+    errors = {}
+    for symbol in ("BTC_USDT", "ETH_USDT"):
+        try:
+            contexts[symbol] = fetch_deep_frames(symbol)["1H"]
+        except Exception as exc:
+            contexts[symbol] = None
+            errors[symbol] = str(exc)
+    return contexts, errors
 
 
 def run_scan():
@@ -115,6 +125,7 @@ def run_scan():
     deep_frames, deep_errors = fetch_many_deep(deep_symbols)
     fast_by_symbol = {row["symbol"]: row for row in fast_rows}
 
+    # Keep legacy V1 output as an audit/reference stream.
     results = []
     for symbol, frames in deep_frames.items():
         try:
@@ -137,9 +148,32 @@ def run_scan():
         )
     )
 
+    contexts, context_errors = _live_contexts()
+    m2_live_signals = []
+    if contexts.get("BTC_USDT") is not None and contexts.get("ETH_USDT") is not None:
+        for symbol, frames in deep_frames.items():
+            try:
+                m2_live_signals.extend(
+                    evaluate_live_symbol(
+                        symbol,
+                        frames,
+                        contexts["BTC_USDT"],
+                        contexts["ETH_USDT"],
+                    )
+                )
+            except Exception as exc:
+                deep_errors[symbol] = f"{deep_errors.get(symbol, '')} live-m2: {exc}".strip()
+
+    m2_live_signals.sort(
+        key=lambda x: (
+            TIER_RANK.get(x.get("tier"), 9),
+            x.get("entry_time") or "",
+        )
+    )
+
     finished = datetime.now(timezone.utc)
     report = {
-        "scanner": "Crypto Short Scanner V1",
+        "scanner": "Crypto Short Scanner M2 V4.4.18 Live",
         "started_at": started.isoformat(),
         "finished_at": finished.isoformat(),
         "duration_seconds": round((finished - started).total_seconds(), 2),
@@ -155,11 +189,18 @@ def run_scan():
             status: sum(1 for row in results if row.get("status") == status)
             for status in STATUS_RANK
         },
+        "m2_live_counts": {
+            tier: sum(1 for row in m2_live_signals if row.get("tier") == tier)
+            for tier in ("A+", "A", "B", "C")
+        },
+        "m2_live_signal_count": len(m2_live_signals),
         "deep_symbols": deep_symbols,
         "results": results,
+        "m2_live_signals": m2_live_signals,
         "errors": {
             "fast": fast_errors,
             "deep": deep_errors,
+            "context": context_errors,
         },
     }
     return report
@@ -181,6 +222,7 @@ def save_report(report):
     json_path = os.path.join(OUTPUT_DIR, "short_scan.json")
     csv_path = os.path.join(OUTPUT_DIR, "short_scan.csv")
     md_path = os.path.join(OUTPUT_DIR, "short_scan.md")
+    m2_csv_path = os.path.join(OUTPUT_DIR, "m2_live_signals.csv")
 
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2, default=str)
@@ -199,42 +241,54 @@ def save_report(report):
             out["reasons"] = " | ".join(row.get("reasons") or [])
             writer.writerow(out)
 
-    actionable = [
-        row for row in report["results"]
-        if row.get("status") in ("ENTRY_READY", "DEVELOPING", "WATCH")
-    ][:TOP_REPORT]
+    m2_fields = [
+        "signal_id","symbol","tier","d_gate","e1_ema_gate","e2_anti_bottom_gate",
+        "signal_anchor_time","break_time","ready_time","entry_time","signal_age_minutes",
+        "watch_hours","entry","stop","tp1","tp2","atr_at_entry",
+        "ema20_distance_atr","anti_bottom_total","candidate_context_points",
+        "market_r4_pct","market_r24_pct","relative_4h_pct","relative_24h_pct",
+        "failed_reclaim_attempts","retest_attempts","pivot_high_count","bars_below",
+    ]
+    with open(m2_csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=m2_fields)
+        writer.writeheader()
+        for row in report.get("m2_live_signals", []):
+            writer.writerow({k: row.get(k) for k in m2_fields})
 
     lines = [
-        "# Crypto Short Scanner V1",
+        "# Crypto Short Scanner — M2 V4.4.18 Live",
         "",
         f"- Scan finished: {report['finished_at']}",
         f"- Universe: {report['universe_count']} contracts",
         f"- Fast scan: {report['fast_success']}/{report['fast_requested']}",
         f"- Deep scan: {report['deep_success']}/{report['deep_requested']}",
-        f"- ENTRY_READY: {report['status_counts'].get('ENTRY_READY', 0)}",
-        f"- DEVELOPING: {report['status_counts'].get('DEVELOPING', 0)}",
+        f"- Fresh M2 D+ signals: {report['m2_live_signal_count']}",
+        f"- Tiers: {report['m2_live_counts']}",
         "",
-        "> Short-only research scanner. A signal is not an instruction to trade.",
+        "> Signal-performance research/live observation only. No auto-order.",
         "",
     ]
-
-    for i, row in enumerate(actionable, 1):
+    for i, row in enumerate(report.get("m2_live_signals", [])[:TOP_REPORT], 1):
         lines.extend([
-            f"## {i}. {row['symbol']} — {row['status']} — {row['score']}/100",
+            f"## {i}. {row['symbol']} — Tier {row['tier']}",
             "",
             f"- Entry: {_fmt_price(row['entry'])}",
-            f"- Stop: {_fmt_price(row['stop'])} ({row['stop_pct']}%)",
-            f"- TP1: {_fmt_price(row['tp1'])} ({row['tp1_r']}R)",
-            f"- TP2: {_fmt_price(row['tp2'])} ({row['tp2_r']}R)",
-            f"- Runner: {_fmt_price(row['runner'])} ({row['runner_r']}R)",
-            f"- Room to nearest support: {row['support_room_r']}R",
-            f"- 1H ATR: {row['atr_pct_1h']}%",
-            f"- 24H change: {row['ticker_change_24h_pct']}%",
-            f"- Reasons: {', '.join(row.get('reasons') or ['none'])}",
+            f"- Stop: {_fmt_price(row['stop'])} (1.75 ATR)",
+            f"- TP1: {_fmt_price(row['tp1'])} (2 ATR)",
+            f"- TP2: {_fmt_price(row['tp2'])} (3 ATR)",
+            f"- Watch: {row['watch_hours']}h",
+            f"- Risk-Off: Y | S4 Macro Bear: Y",
+            f"- E1 EMA gate: {'Y' if row['e1_ema_gate'] else 'N'} ({row.get('ema20_distance_atr')})",
+            f"- E2 Anti-bottom gate: {'Y' if row['e2_anti_bottom_gate'] else 'N'} ({row.get('anti_bottom_total')})",
             "",
         ])
 
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
-    return {"json": json_path, "csv": csv_path, "markdown": md_path}
+    return {
+        "json": json_path,
+        "csv": csv_path,
+        "m2_csv": m2_csv_path,
+        "markdown": md_path,
+    }
