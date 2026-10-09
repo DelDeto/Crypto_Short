@@ -1,0 +1,42 @@
+name: Crypto Short V4.4.14 M2 Regime Decomposition
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v4414_m2_regime.py"
+      - ".github/workflows/v4414-m2-regime-decomposition.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  analyze:
+    name: analyze-v4414-m2-360d-regimes
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-Watch-Gate-360D-Final
+          path: artifact
+          run-id: 37875296221
+          github-token: ${{ github.token }}
+      - name: Decompose 360D by regimes
+        run: python -m short_algo.v4414_m2_regime artifact/v4414_m2_backtest.json output
+      - run: cat output/v4414_m2_360d_regime.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-360D-Regime-Decomposition
+          path: |
+            output/v4414_m2_360d_regime.json
+            output/v4414_m2_360d_regime.md
+          if-no-files-found: error
+          retention-days: 14
