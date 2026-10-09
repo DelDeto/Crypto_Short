@@ -2,8 +2,6 @@ name: Crypto Short M2 V4.4.18 Live
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "7 * * * *"
   push:
     branches: [main]
     paths:
