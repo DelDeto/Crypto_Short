@@ -1,0 +1,129 @@
+name: Crypto Short V4.4.14 M2 Watch Gate 60d
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Signal-window days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp universe"
+        required: true
+        default: "120"
+      fee_bps:
+        description: "Round-trip fee bps"
+        required: true
+        default: "8"
+      slippage_bps:
+        description: "Round-trip slippage bps"
+        required: true
+        default: "6"
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v4414_*.py"
+      - "short_algo/test_v4414_m2_execution.py"
+      - ".github/workflows/v4414-m2-watch-gate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-v4414-m2-watch-gate
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    name: prepare-v4414-m2
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      V4410_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and unit-test V4.4.14
+        run: |
+          python -m compileall -q short_algo
+          python -m unittest -q short_algo.test_v4414_m2_execution
+      - name: Freeze 60d cohort
+        run: python -m short_algo.v4410_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-Manifest
+          path: output/v4410_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    name: m2-v14-shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_FEE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.fee_bps || '8' }}
+      BACKTEST_SLIPPAGE_BPS_ROUND_TRIP: ${{ github.event_name == 'workflow_dispatch' && inputs.slippage_bps || '6' }}
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      V4_MANIFEST_PATH: "frozen/v4410_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay causal watch-time gate
+        run: python -m short_algo.v4414_m2_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Crypto-Short-V4414-M2-Shard-${{ matrix.shard }}
+          path: |
+            output/v4414_m2_backtest.json
+            output/v4414_m2_candidates.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    name: validate-v4414-m2-watch-gate
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Crypto-Short-V4414-M2-Shard-*
+          path: shard_outputs
+      - run: python -m short_algo.v4414_m2_merge shard_outputs
+      - run: cat output/v4414_m2_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-Watch-Gate-Final
+          path: |
+            output/v4414_m2_backtest.json
+            output/v4414_m2_analysis.json
+            output/v4414_m2_manifest.json
+            output/v4414_m2_candidates.csv
+            output/v4414_m2_summary.md
+          if-no-files-found: error
+          retention-days: 14
