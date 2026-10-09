@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: crypto-short-m2-live
+  group: crypto-short-m2-m3-live
   cancel-in-progress: false
 
 jobs:
