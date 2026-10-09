@@ -1,0 +1,42 @@
+name: Crypto Short V4.4.16 M2 Regime Validation 360d
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/v4416_m2_regime_validation.py"
+      - ".github/workflows/v4416-m2-regime-validation.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    name: validate-v4416-m2-regime-360d
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: Crypto-Short-V4414-M2-Watch-Gate-360D-Final
+          path: artifact
+          run-id: 37875296221
+          github-token: ${{ github.token }}
+      - name: Validate V4.4.16 regime gates on frozen 360d cohort
+        run: python -m short_algo.v4416_m2_regime_validation artifact/v4414_m2_backtest.json output
+      - run: cat output/v4416_m2_regime_validation.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crypto-Short-V4416-M2-Regime-Validation-360D
+          path: |
+            output/v4416_m2_regime_validation.json
+            output/v4416_m2_regime_validation.md
+          if-no-files-found: error
+          retention-days: 14
