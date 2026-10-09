@@ -41,7 +41,11 @@ def load_ledger(path=STATE_PATH):
 
 
 def _summary(signals):
-    closed = [s for s in signals if s.get("outcome_status") == "CLOSED" and s.get("net_r") is not None]
+    closed = [
+        s for s in signals
+        if s.get("outcome_status") == "CLOSED"
+        and s.get("net_r") is not None
+    ]
     by_tier = {}
     for tier in ("A+", "A", "B", "C"):
         rows = [s for s in closed if s.get("tier") == tier]
@@ -51,14 +55,22 @@ def _summary(signals):
         by_tier[tier] = {
             "closed": len(rows),
             "positive": sum(x > 0 for x in vals),
-            "positive_pct": round(100 * sum(x > 0 for x in vals) / len(vals), 2) if vals else None,
+            "positive_pct": round(
+                100 * sum(x > 0 for x in vals) / len(vals), 2
+            ) if vals else None,
             "expectancy_r": round(sum(vals) / len(vals), 5) if vals else None,
-            "profit_factor": round(gain / loss, 4) if loss > 0 else (999.0 if gain > 0 else None),
+            "profit_factor": (
+                round(gain / loss, 4)
+                if loss > 0
+                else (999.0 if gain > 0 else None)
+            ),
             "total_net_r": round(sum(vals), 5),
         }
     return {
         "total_signals": len(signals),
-        "open_signals": sum(s.get("outcome_status") == "OPEN" for s in signals),
+        "open_signals": sum(
+            s.get("outcome_status") == "OPEN" for s in signals
+        ),
         "closed_signals": len(closed),
         "by_tier": by_tier,
     }
@@ -116,15 +128,26 @@ def update_outcomes(ledger, now=None):
             entry_time = pd.Timestamp(signal["entry_time"])
             if entry_time.tzinfo is None:
                 entry_time = entry_time.tz_localize("UTC")
-            closed_end = now_ts.floor("15min") - pd.Timedelta(minutes=15)\n            end = min(closed_end, entry_time + pd.Timedelta(hours=97))\n            if end < entry_time:\n                continue
+
+            closed_end = now_ts.floor("15min") - pd.Timedelta(minutes=15)
+            end = min(
+                closed_end,
+                entry_time + pd.Timedelta(hours=97),
+            )
+            if end < entry_time:
+                continue
+
             frame = get_klines_window(
-                signal["symbol"], "15m", entry_time, end
+                signal["symbol"],
+                "15m",
+                entry_time,
+                end,
             )
             if frame is None or frame.empty:
                 continue
-            # Require exact entry bar so execution semantics remain identical.
             if entry_time not in frame.index:
                 continue
+
             entry_idx = int(frame.index.get_loc(entry_time))
             sim = _simulate_variant(
                 frame,
@@ -135,7 +158,10 @@ def update_outcomes(ledger, now=None):
             )
             _apply_sim(signal, sim)
         except Exception as exc:
-            errors.append({"signal_id": signal.get("signal_id"), "error": str(exc)})
+            errors.append({
+                "signal_id": signal.get("signal_id"),
+                "error": str(exc),
+            })
     return errors
 
 
