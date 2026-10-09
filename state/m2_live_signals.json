@@ -42,13 +42,13 @@
       "tp2_atr": 3.0,
       "recorded_at": "2026-10-09T14:26:07.889841+00:00",
       "outcome_status": "OPEN",
-      "outcome_state": "OPEN",
+      "outcome_state": "CENSORED_INCOMPLETE_HORIZON",
       "tp1_hit": 0,
       "tp2_hit": 0,
       "gross_r": null,
       "net_r": null,
       "exit_time": null,
-      "last_outcome_check": null
+      "last_outcome_check": "2026-10-09T16:09:31.874548+00:00"
     }
   ],
   "summary": {
@@ -90,5 +90,5 @@
       }
     }
   },
-  "updated_at": "2026-10-09T14:26:07.889889+00:00"
+  "updated_at": "2026-10-09T16:09:31.874625+00:00"
 }
