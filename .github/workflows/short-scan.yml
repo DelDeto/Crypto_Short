@@ -45,7 +45,7 @@ jobs:
         env:
           SHORT_TELEGRAM_BOT_TOKEN: ${{ secrets.SHORT_TELEGRAM_BOT_TOKEN }}
           SHORT_TELEGRAM_CHAT_ID: ${{ secrets.SHORT_TELEGRAM_CHAT_ID }}
-          TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
+          TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUPID }}
         run: python -m short_algo.main
 
       - name: Persist signal outcome ledger
