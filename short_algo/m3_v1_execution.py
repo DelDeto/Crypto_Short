@@ -379,6 +379,114 @@ def _build_24h_path(future15, entry_idx, entry, atr_value, stop):
     return checkpoints
 
 
+def _entry_quality_24h(future15, entry_idx, entry, atr_value):
+    """Sequence-aware entry quality diagnostics over the first 24h.
+
+    FAVORABLE for a short = price falls from entry.
+    ADVERSE = price rises from entry.
+    The study records which side touches each ATR threshold first, plus the
+    maximum adverse excursion seen before favorable targets are reached.
+    """
+    rows = future15.iloc[int(entry_idx):]
+    if rows.empty:
+        return {}
+
+    a = max(float(atr_value), 1e-12)
+    entry = float(entry)
+    start = rows.index[0]
+    end = start + pd.Timedelta(hours=24)
+    rows = rows.loc[rows.index < end]
+    if rows.empty:
+        return {}
+
+    thresholds = (0.5, 1.0, 1.5, 2.0)
+    first = {
+        th: {
+            "side": "NONE",
+            "time": None,
+            "minutes": None,
+        }
+        for th in thresholds
+    }
+
+    preprofit_mae = {1.0: 0.0, 1.5: 0.0}
+    target_reached = {1.0: False, 1.5: False}
+    max_adverse = 0.0
+    max_favorable = 0.0
+
+    for _, (t, row) in enumerate(rows.iterrows()):
+        high = float(row["high"])
+        low = float(row["low"])
+        favorable = max(0.0, entry - low) / a
+        adverse = max(0.0, high - entry) / a
+        max_favorable = max(max_favorable, favorable)
+        max_adverse = max(max_adverse, adverse)
+
+        for target in (1.0, 1.5):
+            if not target_reached[target]:
+                preprofit_mae[target] = max(preprofit_mae[target], adverse)
+                if favorable >= target:
+                    target_reached[target] = True
+
+        for th in thresholds:
+            if first[th]["side"] != "NONE":
+                continue
+            hit_f = favorable >= th
+            hit_a = adverse >= th
+            if not hit_f and not hit_a:
+                continue
+            if hit_f and hit_a:
+                side = "SAME_BAR"
+            elif hit_f:
+                side = "FAVORABLE_FIRST"
+            else:
+                side = "ADVERSE_FIRST"
+            touch_time = pd.Timestamp(t) + STEP
+            first[th] = {
+                "side": side,
+                "time": touch_time.isoformat(),
+                "minutes": int((touch_time - start).total_seconds() // 60),
+            }
+
+    f1 = first[1.0]
+    f15 = first[1.5]
+
+    if (
+        f1["side"] == "FAVORABLE_FIRST"
+        and target_reached[1.0]
+        and preprofit_mae[1.0] <= 0.50
+    ):
+        label = "CLEAN"
+    elif (
+        f15["side"] == "FAVORABLE_FIRST"
+        and target_reached[1.5]
+        and preprofit_mae[1.5] <= 0.75
+    ):
+        label = "GOOD"
+    elif f1["side"] in ("ADVERSE_FIRST", "SAME_BAR") or preprofit_mae[1.0] >= 1.0:
+        label = "BAD"
+    elif not target_reached[1.0]:
+        label = "NO_FOLLOW_THROUGH"
+    else:
+        label = "MIXED"
+
+    out = {
+        "m3_entry_quality_label": label,
+        "m3_preprofit_mae_1atr": round(preprofit_mae[1.0], 5),
+        "m3_preprofit_mae_1_5atr": round(preprofit_mae[1.5], 5),
+        "m3_24h_max_favorable_atr": round(max_favorable, 5),
+        "m3_24h_max_adverse_atr": round(max_adverse, 5),
+        "m3_reached_1atr_24h": int(target_reached[1.0]),
+        "m3_reached_1_5atr_24h": int(target_reached[1.5]),
+    }
+    for th in thresholds:
+        tag = str(th).replace(".", "_")
+        out[f"m3_first_{tag}atr_side"] = first[th]["side"]
+        out[f"m3_first_{tag}atr_time"] = first[th]["time"]
+        out[f"m3_first_{tag}atr_minutes"] = first[th]["minutes"]
+    return out
+
+
 def evaluate_m3_v1(one_closed, four_closed, future15, signal_time):
     out = {
         "m3_state": "NO_SETUP",
@@ -495,6 +603,14 @@ def evaluate_m3_v1(one_closed, four_closed, future15, signal_time):
         entry,
         a,
         stop,
+    )
+    out.update(
+        _entry_quality_24h(
+            future15,
+            int(confirm["entry_idx"]),
+            entry,
+            a,
+        )
     )
 
     for target_atr in M3_TARGET_ATR_VARIANTS:
