@@ -48,7 +48,7 @@
       "gross_r": null,
       "net_r": null,
       "exit_time": null,
-      "last_outcome_check": "2026-10-09T16:09:31.874548+00:00"
+      "last_outcome_check": "2026-10-09T16:26:49.347086+00:00"
     }
   ],
   "summary": {
@@ -90,5 +90,5 @@
       }
     }
   },
-  "updated_at": "2026-10-09T16:09:31.874625+00:00"
+  "updated_at": "2026-10-09T16:26:49.347155+00:00"
 }
