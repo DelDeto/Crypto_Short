@@ -242,7 +242,7 @@ def _fifteen_confirmation(symbol, one_pattern):
 
 
 def _market_state(btc_one, eth_one):
-    if btc_one is None or eth_one is None or len(btc_one) < 24 or len(eth_one) < 24:
+    if btc_one is None or eth_one is None or len(btc_one) < 25 or len(eth_one) < 25:
         return {"state": "UNKNOWN", "risk_on": False, "risk_off": False}
 
     def one_state(frame):
