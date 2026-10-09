@@ -3,8 +3,6 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
-# Same shared group used by Market-Setup-Watch.
-DEFAULT_GROUP_CHAT_ID = "-1003984243045"
 VN_TZ = timezone(timedelta(hours=7))
 
 
@@ -33,30 +31,26 @@ def _scan_time_vn(value):
 
 def _credentials():
     token = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("SHORT_TELEGRAM_BOT_TOKEN")
-    personal_chat_id = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("SHORT_TELEGRAM_CHAT_ID")
+    personal = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("SHORT_TELEGRAM_CHAT_ID")
+    group = os.getenv("TELEGRAM_GROUP_CHAT_ID")
     if not token:
-        print("Telegram skipped: missing TELEGRAM_BOT_TOKEN.")
+        print("Telegram skipped: missing bot token.")
         return None, []
 
-    # Private-first mode: only send to the user's direct chat for validation.
-    # Group delivery will be enabled later after the user approves the signal format.
     chat_ids = []
-    if personal_chat_id:
-        chat_ids.append(personal_chat_id)
-
+    for value in (personal, group):
+        if value and value not in chat_ids:
+            chat_ids.append(value)
     if not chat_ids:
-        print("Telegram skipped: missing personal Telegram chat ID.")
+        print("Telegram skipped: missing chat IDs.")
         return None, []
-
     return token, chat_ids
 
 
 def _split_text(text, max_chars=3800):
     if len(text) <= max_chars:
         return [text]
-
-    chunks = []
-    current = []
+    chunks, current = [], []
     for block in text.split("\n\n"):
         candidate = "\n\n".join(current + [block])
         if len(candidate) <= max_chars:
@@ -68,93 +62,89 @@ def _split_text(text, max_chars=3800):
         if len(block) <= max_chars:
             current = [block]
         else:
-            start = 0
-            while start < len(block):
+            for start in range(0, len(block), max_chars):
                 chunks.append(block[start:start + max_chars])
-                start += max_chars
     if current:
         chunks.append("\n\n".join(current))
     return chunks
 
 
-def build_text(report, max_rows=8):
-    rows = [
-        row for row in report.get("results", [])
-        if row.get("status") in ("ENTRY_READY", "DEVELOPING", "WATCH")
-    ][:max_rows]
+def _tier_label(tier):
+    return {
+        "A+": "🟣 A+ · E1+E2",
+        "A": "🟢 A · E2 QUALITY",
+        "B": "🔵 B · E1 EMA",
+        "C": "🟡 C · D BASE",
+    }.get(tier, str(tier or "-"))
 
-    counts = report.get("status_counts", {})
+
+def build_text(report, max_rows=8):
+    rows = (report.get("new_m2_signals") or [])[:max_rows]
+    counts = report.get("m2_live_counts") or {}
+    outcome = report.get("outcome_summary") or {}
+
     lines = [
-        "🔻 CRYPTO SHORT SCANNER",
-        "=" * 28,
+        "🔻 M2 SHORT LIVE · V4.4.18",
+        "=" * 30,
         f"Scan VN: {_scan_time_vn(report.get('finished_at'))}",
         (
-            f"MEXC: {report.get('universe_count', 0)} | "
-            f"Fast: {report.get('fast_success', 0)} | "
-            f"Deep: {report.get('deep_success', 0)}"
+            f"MEXC {report.get('universe_count', 0)} | "
+            f"Deep {report.get('deep_success', 0)}/{report.get('deep_requested', 0)}"
         ),
         (
-            f"🔥 ENTRY {counts.get('ENTRY_READY', 0)} | "
-            f"⚡ DEVELOPING {counts.get('DEVELOPING', 0)} | "
-            f"👀 WATCH {counts.get('WATCH', 0)}"
+            f"Fresh: {len(rows)} | "
+            f"A+ {counts.get('A+', 0)} · A {counts.get('A', 0)} · "
+            f"B {counts.get('B', 0)} · C {counts.get('C', 0)}"
         ),
-        "Rule: TP1 = 2R | TP2 = 3R | Runner = 5R",
+        (
+            f"Outcome ledger: open {outcome.get('open_signals', 0)} | "
+            f"closed {outcome.get('closed_signals', 0)}"
+        ),
+        "Core: Risk-Off + S4 Macro Bear → breakdown → no reclaim/lower highs → watch 24–48h → 1H confirm",
     ]
 
     if not rows:
         lines += [
             "",
-            "Chưa có setup Short đạt ngưỡng WATCH trở lên.",
+            "Không có tín hiệu M2-D mới trong run này.",
+            "Bot vẫn đang chạy; outcome các signal cũ vẫn được cập nhật tự động.",
         ]
         return "\n".join(lines)
 
-    icons = {
-        "ENTRY_READY": "🔥",
-        "DEVELOPING": "⚡",
-        "WATCH": "👀",
-    }
-
     for index, row in enumerate(rows, 1):
-        reasons = ", ".join(row.get("reasons") or ["-"])
-        filters = row.get("filters") or {}
         lines += [
             "",
-            (
-                f"{icons.get(row.get('status'), '•')} {index}. "
-                f"{row.get('symbol')} · SHORT · "
-                f"{row.get('status')} · S{row.get('score')}/100"
-            ),
+            f"🔻 {index}. {row.get('symbol')} · {_tier_label(row.get('tier'))}",
             f"Entry: {_fmt(row.get('entry'))}",
+            f"SL: {_fmt(row.get('stop'))} · 1.75 ATR",
+            f"TP1: {_fmt(row.get('tp1'))} · 2 ATR | TP2: {_fmt(row.get('tp2'))} · 3 ATR",
             (
-                f"SL: {_fmt(row.get('stop'))} "
-                f"({row.get('stop_pct', '-')}%)"
+                f"D: ✅ Risk-Off + ✅ S4 Macro Bear | "
+                f"Watch {row.get('watch_hours', '-')}h"
             ),
             (
-                f"TP1: {_fmt(row.get('tp1'))} (2R) | "
-                f"TP2: {_fmt(row.get('tp2'))} (3R)"
-            ),
-            f"Runner: {_fmt(row.get('runner'))} (5R)",
-            (
-                f"Room→support: {row.get('support_room_r', '-')}R | "
-                f"ATR 1H: {row.get('atr_pct_1h', '-')}%"
+                f"E1 EMA≥1.36ATR: {'✅' if row.get('e1_ema_gate') else '❌'} "
+                f"({row.get('ema20_distance_atr', '-')})"
             ),
             (
-                f"24H: {row.get('ticker_change_24h_pct', '-')}% | "
-                f"Funding: {row.get('funding_rate', '-')}"
+                f"E2 Anti-bottom≥17: {'✅' if row.get('e2_anti_bottom_gate') else '❌'} "
+                f"({row.get('anti_bottom_total', '-')})"
             ),
             (
-                "Filter: "
-                f"MTF={'Y' if filters.get('mtf_ok') else 'N'} | "
-                f"Trigger={'Y' if filters.get('trigger_present') else 'N'} | "
-                f"Location={'Y' if filters.get('location_ok') else 'N'} | "
-                f"Risk={'Y' if filters.get('risk_ok') else 'N'}"
+                f"Market 4H/24H: {row.get('market_r4_pct', '-')}% / "
+                f"{row.get('market_r24_pct', '-')}%"
             ),
-            f"Why: {reasons}",
+            (
+                f"Retest {row.get('retest_attempts', '-')} | "
+                f"Bars below {row.get('bars_below', '-')}"
+            ),
+            f"Entry time VN: {_scan_time_vn(row.get('entry_time'))}",
         ]
 
     lines += [
         "",
-        "⚠️ Scanner research signal — không phải auto-order.",
+        "Tier: A+=D+E1+E2 | A=D+E2 | B=D+E1 | C=D only",
+        "⚠️ Live signal observation; không tự động đặt lệnh.",
     ]
     return "\n".join(lines)
 
@@ -166,17 +156,12 @@ def _send_text(token, chat_id, text):
             chunk = f"[{index}/{len(chunks)}]\n" + chunk
         response = requests.post(
             f"https://api.telegram.org/bot{token}/sendMessage",
-            json={
-                "chat_id": chat_id,
-                "text": chunk,
-                "disable_web_page_preview": True,
-            },
+            json={"chat_id": chat_id, "text": chunk, "disable_web_page_preview": True},
             timeout=20,
         )
         if response.status_code != 200:
             raise RuntimeError(
-                f"Telegram send failed for {chat_id}: "
-                f"HTTP {response.status_code} {response.text[:500]}"
+                f"Telegram send failed for {chat_id}: HTTP {response.status_code} {response.text[:500]}"
             )
     return len(chunks)
 
@@ -191,8 +176,5 @@ def send_telegram(report):
     for chat_id in chat_ids:
         messages += _send_text(token, chat_id, text)
 
-    print(
-        f"Crypto Short Telegram sent to {len(chat_ids)} destination(s) "
-        f"({messages} message(s))."
-    )
+    print(f"M2 live Telegram sent to {len(chat_ids)} destination(s) ({messages} message(s)).")
     return True
