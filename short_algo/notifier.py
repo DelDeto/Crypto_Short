@@ -141,10 +141,61 @@ def build_text(report, max_rows=8):
             f"Entry time VN: {_scan_time_vn(row.get('entry_time'))}",
         ]
 
+    m3_rows = (report.get("new_m3_signals") or [])[:max_rows]
+    m3_counts = report.get("m3_live_counts") or {}
+    m3_outcome = report.get("m3_outcome_summary") or {}
+
     lines += [
         "",
-        "Tier: A+=D+E1+E2 | A=D+E2 | B=D+E1 | C=D only",
-        "⚠️ Live signal observation; không tự động đặt lệnh.",
+        "Tier M2: A+=D+E1+E2 | A=D+E2 | B=D+E1 | C=D only",
+        "",
+        "⚡ M3 SHORT · V3.2 · INTRADAY PULLBACK",
+        f"Fresh: {len(m3_rows)} | A {m3_counts.get('A', 0)} · B {m3_counts.get('B', 0)} · C {m3_counts.get('C', 0)}",
+        (
+            f"Outcome M3: open {m3_outcome.get('open_signals', 0)} | "
+            f"closed {m3_outcome.get('closed_signals', 0)}"
+        ),
+        "Core: 4H bear → 1H impulse → pullback resistance → failed reclaim → 15m confirm",
+    ]
+
+    if not m3_rows:
+        lines += [
+            "Không có M3 candidate mới trong run này.",
+        ]
+    else:
+        for index, row in enumerate(m3_rows, 1):
+            lines += [
+                "",
+                f"⚡ M3-{index}. {row.get('symbol')} · Tier {row.get('tier')} · {row.get('status')}",
+                (
+                    f"Entry zone tham chiếu: {_fmt(row.get('entry_zone_low'))} → "
+                    f"{_fmt(row.get('entry_zone_high'))}"
+                ),
+                f"Invalidation: {_fmt(row.get('invalidation'))}",
+                f"TP1: {_fmt(row.get('tp1'))} · 1 ATR | TP2: {_fmt(row.get('tp2'))} · 2 ATR",
+                (
+                    f"4H bear {row.get('four_hour_bear_votes', '-')}/3 | "
+                    f"Impulse {row.get('impulse_atr', '-')} ATR"
+                ),
+                (
+                    f"Pullback {row.get('pullback_zone', '-')} | "
+                    f"Retrace {row.get('retrace_pct', '-')}%"
+                ),
+                (
+                    f"Failed reclaim {'✅' if row.get('failed_reclaim') else '❌'} | "
+                    f"15m confirm {'✅' if row.get('confirm_15m') else '⏳'}"
+                ),
+                (
+                    f"Market {row.get('market_state', '-')} | "
+                    f"Chase {row.get('chase_distance_atr', '-')} ATR"
+                ),
+                f"Signal VN: {_scan_time_vn(row.get('signal_time'))} | thesis tối đa 24h",
+            ]
+
+    lines += [
+        "",
+        "M3 A/B = confirmed candidate; C = developing watch.",
+        "⚠️ M2/M3 chỉ phát hiện setup và theo dõi outcome thuật toán; bạn tự quyết định vào/ra lệnh.",
     ]
     return "\n".join(lines)
 
@@ -181,13 +232,13 @@ def send_telegram(report):
             sent = _send_text(token, chat_id, text)
             messages += sent
             successes += 1
-            print(f"M2 Telegram destination OK: {chat_id} ({sent} message(s)).")
+            print(f"M2/M3 Telegram destination OK: {chat_id} ({sent} message(s)).")
         except Exception as exc:
             failures.append({"chat_id": str(chat_id), "error": str(exc)})
-            print(f"M2 Telegram destination FAILED: {chat_id}: {exc}")
+            print(f"M2/M3 Telegram destination FAILED: {chat_id}: {exc}")
 
     print(
-        f"M2 live Telegram summary: {successes}/{len(chat_ids)} destination(s) OK "
+        f"M2/M3 live Telegram summary: {successes}/{len(chat_ids)} destination(s) OK "
         f"({messages} message(s)); failures={len(failures)}."
     )
 
