@@ -21,9 +21,9 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     env:
-      DEEP_LIMIT: "120"
+      DEEP_LIMIT: "240"
       M2_LIVE_MAX_SIGNAL_AGE_MIN: "90"
 
     steps:
