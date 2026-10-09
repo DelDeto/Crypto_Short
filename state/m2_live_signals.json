@@ -1,9 +1,59 @@
 {
   "version": 1,
-  "signals": [],
+  "signals": [
+    {
+      "signal_id": "SOPH_USDT|2026-10-09T14:00:00+00:00|2026-10-07T12:00:00+00:00",
+      "symbol": "SOPH_USDT",
+      "model": "M2_V4418_LIVE",
+      "tier": "C",
+      "d_gate": true,
+      "e1_ema_gate": false,
+      "e2_anti_bottom_gate": false,
+      "signal_anchor_time": "2026-10-07T04:00:00+00:00",
+      "break_time": "2026-10-07T12:00:00+00:00",
+      "ready_time": "2026-10-09T12:00:00+00:00",
+      "entry_time": "2026-10-09T14:00:00+00:00",
+      "signal_age_minutes": 26.1,
+      "watch_hours": 48.0,
+      "support_level": 0.003681,
+      "support_lower": 0.00368,
+      "support_upper": 0.003803,
+      "atr_at_entry": 4.02143e-05,
+      "ema20_distance_atr": 0.4556,
+      "anti_bottom_total": 6.0,
+      "candidate_context_points": 3,
+      "market_r4_pct": -2.4302,
+      "market_r24_pct": -2.4349,
+      "relative_4h_pct": 1.9494,
+      "relative_24h_pct": 2.3544,
+      "market_risk_off": 1,
+      "s4_macro_bear": 1,
+      "failed_reclaim_attempts": 2,
+      "retest_attempts": 7,
+      "pivot_high_count": 3,
+      "bars_below": 10,
+      "entry_below_support_atr": 2.16341,
+      "entry": 0.003593,
+      "stop": 0.003663375,
+      "tp1": 0.0035125714,
+      "tp2": 0.0034723571,
+      "risk_atr": 1.75,
+      "tp1_atr": 2.0,
+      "tp2_atr": 3.0,
+      "recorded_at": "2026-10-09T14:26:07.889841+00:00",
+      "outcome_status": "OPEN",
+      "outcome_state": "OPEN",
+      "tp1_hit": 0,
+      "tp2_hit": 0,
+      "gross_r": null,
+      "net_r": null,
+      "exit_time": null,
+      "last_outcome_check": null
+    }
+  ],
   "summary": {
-    "total_signals": 0,
-    "open_signals": 0,
+    "total_signals": 1,
+    "open_signals": 1,
     "closed_signals": 0,
     "by_tier": {
       "A+": {
@@ -40,5 +90,5 @@
       }
     }
   },
-  "updated_at": "2026-10-09T12:06:17.580069+00:00"
+  "updated_at": "2026-10-09T14:26:07.889889+00:00"
 }
