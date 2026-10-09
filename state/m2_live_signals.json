@@ -41,20 +41,20 @@
       "tp1_atr": 2.0,
       "tp2_atr": 3.0,
       "recorded_at": "2026-10-09T14:26:07.889841+00:00",
-      "outcome_status": "OPEN",
-      "outcome_state": "CENSORED_INCOMPLETE_HORIZON",
+      "outcome_status": "CLOSED",
+      "outcome_state": "SL_FIRST",
       "tp1_hit": 0,
       "tp2_hit": 0,
-      "gross_r": null,
-      "net_r": null,
-      "exit_time": null,
-      "last_outcome_check": "2026-10-09T16:26:49.347086+00:00"
+      "gross_r": -1.0,
+      "net_r": -1.07148,
+      "exit_time": "2026-10-09T16:30:00+00:00",
+      "last_outcome_check": "2026-10-09T16:38:21.850603+00:00"
     }
   ],
   "summary": {
     "total_signals": 1,
-    "open_signals": 1,
-    "closed_signals": 0,
+    "open_signals": 0,
+    "closed_signals": 1,
     "by_tier": {
       "A+": {
         "closed": 0,
@@ -81,14 +81,14 @@
         "total_net_r": 0
       },
       "C": {
-        "closed": 0,
+        "closed": 1,
         "positive": 0,
-        "positive_pct": null,
-        "expectancy_r": null,
-        "profit_factor": null,
-        "total_net_r": 0
+        "positive_pct": 0.0,
+        "expectancy_r": -1.07148,
+        "profit_factor": 0.0,
+        "total_net_r": -1.07148
       }
     }
   },
-  "updated_at": "2026-10-09T16:26:49.347155+00:00"
+  "updated_at": "2026-10-09T16:38:21.850699+00:00"
 }
