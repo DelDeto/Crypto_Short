@@ -173,8 +173,24 @@ def send_telegram(report):
 
     text = build_text(report)
     messages = 0
-    for chat_id in chat_ids:
-        messages += _send_text(token, chat_id, text)
+    successes = 0
+    failures = []
 
-    print(f"M2 live Telegram sent to {len(chat_ids)} destination(s) ({messages} message(s)).")
+    for chat_id in chat_ids:
+        try:
+            sent = _send_text(token, chat_id, text)
+            messages += sent
+            successes += 1
+            print(f"M2 Telegram destination OK: {chat_id} ({sent} message(s)).")
+        except Exception as exc:
+            failures.append({"chat_id": str(chat_id), "error": str(exc)})
+            print(f"M2 Telegram destination FAILED: {chat_id}: {exc}")
+
+    print(
+        f"M2 live Telegram summary: {successes}/{len(chat_ids)} destination(s) OK "
+        f"({messages} message(s)); failures={len(failures)}."
+    )
+
+    if successes == 0:
+        raise RuntimeError(f"Telegram failed for all destinations: {failures}")
     return True
