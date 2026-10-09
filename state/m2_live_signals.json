@@ -5,6 +5,40 @@
     "total_signals": 0,
     "open_signals": 0,
     "closed_signals": 0,
-    "by_tier": {}
-  }
+    "by_tier": {
+      "A+": {
+        "closed": 0,
+        "positive": 0,
+        "positive_pct": null,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "total_net_r": 0
+      },
+      "A": {
+        "closed": 0,
+        "positive": 0,
+        "positive_pct": null,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "total_net_r": 0
+      },
+      "B": {
+        "closed": 0,
+        "positive": 0,
+        "positive_pct": null,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "total_net_r": 0
+      },
+      "C": {
+        "closed": 0,
+        "positive": 0,
+        "positive_pct": null,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "total_net_r": 0
+      }
+    }
+  },
+  "updated_at": "2026-10-09T08:53:41.406655+00:00"
 }
