@@ -1,4 +1,4 @@
-"""Decompose the completed V4.4.14 360D final artifact by time regime."""
+"""Decompose completed V4.4.14 360D artifact using the SAME unique96h logic as merge."""
 import json
 import os
 import sys
@@ -6,6 +6,8 @@ from collections import defaultdict
 
 import numpy as np
 import pandas as pd
+
+COOLDOWN_HOURS = 96
 
 
 def _num(v):
@@ -39,20 +41,40 @@ def _metrics(rows):
         "net_expectancy_r": round(float(np.mean(net)), 5) if net else None,
         "profit_factor": _pf(net),
         "total_net_r": round(float(sum(net)), 5),
-        "tp1_hit_pct": _pct(
-            sum(int(r.get("v4414_m2_exec_tp1_hit") or 0) for r in fills),
-            len(fills),
-        ),
-        "tp2_hit_pct": _pct(
-            sum(int(r.get("v4414_m2_exec_tp2_hit") or 0) for r in fills),
-            len(fills),
-        ),
+        "tp1_hit_pct": _pct(sum(int(r.get("v4414_m2_exec_tp1_hit") or 0) for r in fills), len(fills)),
+        "tp2_hit_pct": _pct(sum(int(r.get("v4414_m2_exec_tp2_hit") or 0) for r in fills), len(fills)),
     }
 
 
+def _exact_events(rows):
+    d = {}
+    for r in sorted(rows, key=lambda x: (str(x.get("signal_time")), str(x.get("symbol")))):
+        bt = r.get("v4414_m2_break_time")
+        if not bt:
+            continue
+        key = (str(r.get("symbol")), str(bt), str(r.get("v4414_m2_support_level")))
+        d.setdefault(key, r)
+    return list(d.values())
+
+
+def _unique96h(events):
+    last = {}
+    out = []
+    for r in sorted(events, key=lambda x: (str(x.get("v4414_m2_break_time")), str(x.get("symbol")))):
+        symbol = str(r.get("symbol"))
+        t = pd.Timestamp(r.get("v4414_m2_break_time"))
+        prev = last.get(symbol)
+        if prev is not None and (t - prev) < pd.Timedelta(hours=COOLDOWN_HOURS):
+            continue
+        last[symbol] = t
+        out.append(r)
+    return out
+
+
 def _entry_rows(report):
+    events = _unique96h(_exact_events(report.get("trades") or []))
     rows = []
-    for r in report.get("trades") or []:
+    for r in events:
         if r.get("v4414_m2_entry_time") is None:
             continue
         if _num(r.get("v4414_m2_exec_net_r")) is None:
@@ -73,12 +95,7 @@ def _fixed_blocks(rows, start, days, block_days):
     while cur < end:
         nxt = min(cur + block, end)
         sub = [r for r in rows if cur <= r["_entry_ts"] < nxt]
-        out.append({
-            "index": i + 1,
-            "start": cur.isoformat(),
-            "end": nxt.isoformat(),
-            **_metrics(sub),
-        })
+        out.append({"index": i + 1, "start": cur.isoformat(), "end": nxt.isoformat(), **_metrics(sub)})
         i += 1
         cur = nxt
     return out
@@ -87,12 +104,8 @@ def _fixed_blocks(rows, start, days, block_days):
 def _monthly(rows):
     groups = defaultdict(list)
     for r in rows:
-        key = r["_entry_ts"].strftime("%Y-%m")
-        groups[key].append(r)
-    return [
-        {"month": key, **_metrics(groups[key])}
-        for key in sorted(groups)
-    ]
+        groups[r["_entry_ts"].strftime("%Y-%m")].append(r)
+    return [{"month": k, **_metrics(groups[k])} for k in sorted(groups)]
 
 
 def _quarterly(rows):
@@ -100,40 +113,24 @@ def _quarterly(rows):
     for r in rows:
         ts = r["_entry_ts"]
         q = (ts.month - 1) // 3 + 1
-        key = f"{ts.year}-Q{q}"
-        groups[key].append(r)
-    return [
-        {"quarter": key, **_metrics(groups[key])}
-        for key in sorted(groups)
-    ]
+        groups[f"{ts.year}-Q{q}"].append(r)
+    return [{"quarter": k, **_metrics(groups[k])} for k in sorted(groups)]
 
 
 def _stability(blocks):
     valid = [b for b in blocks if b["fills"] > 0]
-    pos_exp = [b for b in valid if (b["net_expectancy_r"] or 0) > 0]
+    pos = [b for b in valid if (b["net_expectancy_r"] or 0) > 0]
     pf1 = [b for b in valid if b["profit_factor"] is not None and b["profit_factor"] > 1]
     return {
         "periods": len(valid),
-        "positive_expectancy_periods": len(pos_exp),
-        "positive_expectancy_pct": _pct(len(pos_exp), len(valid)),
+        "positive_expectancy_periods": len(pos),
+        "positive_expectancy_pct": _pct(len(pos), len(valid)),
         "pf_gt_1_periods": len(pf1),
         "pf_gt_1_pct": _pct(len(pf1), len(valid)),
-        "worst_expectancy_r": min(
-            (b["net_expectancy_r"] for b in valid if b["net_expectancy_r"] is not None),
-            default=None,
-        ),
-        "best_expectancy_r": max(
-            (b["net_expectancy_r"] for b in valid if b["net_expectancy_r"] is not None),
-            default=None,
-        ),
-        "worst_pf": min(
-            (b["profit_factor"] for b in valid if b["profit_factor"] is not None),
-            default=None,
-        ),
-        "best_pf": max(
-            (b["profit_factor"] for b in valid if b["profit_factor"] is not None),
-            default=None,
-        ),
+        "worst_expectancy_r": min((b["net_expectancy_r"] for b in valid if b["net_expectancy_r"] is not None), default=None),
+        "best_expectancy_r": max((b["net_expectancy_r"] for b in valid if b["net_expectancy_r"] is not None), default=None),
+        "worst_pf": min((b["profit_factor"] for b in valid if b["profit_factor"] is not None), default=None),
+        "best_pf": max((b["profit_factor"] for b in valid if b["profit_factor"] is not None), default=None),
     }
 
 
@@ -155,6 +152,7 @@ def main():
     quarters = _quarterly(rows)
 
     analysis = {
+        "dedupe": "exact break event + symbol 96h cooldown, same as v4414_m2_merge",
         "overall": _metrics(rows),
         "blocks_60d": blocks60,
         "blocks_90d": blocks90,
@@ -168,12 +166,18 @@ def main():
         "rule": (report.get("analysis") or {}).get("rule"),
     }
 
+    expected = ((report.get("analysis") or {}).get("counts") or {}).get("unique_entries")
+    if expected is not None and int(expected) != int(analysis["overall"]["fills"]):
+        raise RuntimeError(
+            f"Unique-entry mismatch: regime={analysis['overall']['fills']} merge={expected}"
+        )
+
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, "v4414_m2_360d_regime.json"), "w", encoding="utf-8") as f:
         json.dump(analysis, f, ensure_ascii=False, indent=2)
 
     lines = [
-        "# V4.4.14 M2 — 360D Regime Decomposition",
+        "# V4.4.14 M2 — 360D Regime Decomposition (Unique96h)",
         "",
         f"Overall: {analysis['overall']}",
         "",
@@ -189,9 +193,8 @@ def main():
     lines += ["", f"60D stability: {analysis['stability_60d']}"]
     lines += [f"90D stability: {analysis['stability_90d']}"]
 
-    summary = "\n".join(lines)
     with open(os.path.join(outdir, "v4414_m2_360d_regime.md"), "w", encoding="utf-8") as f:
-        f.write(summary)
+        f.write("\n".join(lines))
 
     print(json.dumps(analysis, ensure_ascii=False, indent=2))
     return 0
