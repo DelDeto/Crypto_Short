@@ -331,6 +331,54 @@ def _simulate_variant(future15, entry_idx, entry, stop, atr_value, target_atr, s
     )
 
 
+def _build_24h_path(future15, entry_idx, entry, atr_value, stop):
+    """Observe raw post-entry price path for 24h without censoring at SL/TP.
+
+    Each hourly checkpoint records close displacement for a short plus
+    cumulative favorable/adverse excursion. This is diagnostic only.
+    """
+    if future15 is None or future15.empty:
+        return []
+
+    risk = max(float(stop) - float(entry), 1e-12)
+    a = max(float(atr_value), 1e-12)
+    rows = future15.iloc[int(entry_idx):]
+    if rows.empty:
+        return []
+
+    entry_time = rows.index[0]
+    checkpoints = []
+    running_low = float(entry)
+    running_high = float(entry)
+
+    for hour in range(1, 25):
+        cutoff = entry_time + pd.Timedelta(hours=hour)
+        window = rows.loc[rows.index < cutoff]
+        if window.empty:
+            continue
+
+        running_low = min(running_low, float(window["low"].astype(float).min()))
+        running_high = max(running_high, float(window["high"].astype(float).max()))
+        last_close = float(window["close"].iloc[-1])
+
+        close_move = float(entry) - last_close
+        mfe = max(0.0, float(entry) - running_low)
+        mae = max(0.0, running_high - float(entry))
+
+        checkpoints.append({
+            "hour": hour,
+            "checkpoint_time": cutoff.isoformat(),
+            "close": round(last_close, 10),
+            "short_close_atr": round(close_move / a, 5),
+            "short_close_r": round(close_move / risk, 5),
+            "cum_mfe_atr": round(mfe / a, 5),
+            "cum_mae_atr": round(mae / a, 5),
+            "cum_mfe_r": round(mfe / risk, 5),
+            "cum_mae_r": round(mae / risk, 5),
+        })
+    return checkpoints
+
+
 def evaluate_m3_v1(one_closed, four_closed, future15, signal_time):
     out = {
         "m3_state": "NO_SETUP",
@@ -438,6 +486,16 @@ def evaluate_m3_v1(one_closed, four_closed, future15, signal_time):
     if risk_atr > float(M3_MAX_RISK_ATR):
         out["m3_state"] = "SKIP_RISK_TOO_WIDE"
         return out
+
+    # V1.1 diagnostic: raw 24h path from benchmark entry. This intentionally
+    # ignores theoretical exits so we can study what price did after entry.
+    out["m3_path_24h"] = _build_24h_path(
+        future15,
+        int(confirm["entry_idx"]),
+        entry,
+        a,
+        stop,
+    )
 
     for target_atr in M3_TARGET_ATR_VARIANTS:
         out.update(
