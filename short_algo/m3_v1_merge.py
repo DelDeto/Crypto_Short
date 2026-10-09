@@ -1,4 +1,5 @@
 """Merge and score M3 V1 research shards."""
+import csv
 import json
 import os
 import sys
@@ -296,6 +297,34 @@ def merge_reports(reports):
     }
 
 
+def _write_path_points_csv(path, rows):
+    fields = [
+        "symbol", "signal_time", "m3_tier", "m3_market_state",
+        "m3_resistance_source", "m3_entry_time", "m3_entry", "m3_stop",
+        "m3_atr", "m3_risk_atr", "hour", "checkpoint_time", "close",
+        "short_close_atr", "short_close_r", "cum_mfe_atr", "cum_mae_atr",
+        "cum_mfe_r", "cum_mae_r",
+    ]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        for row in rows:
+            for point in row.get("m3_path_24h") or []:
+                writer.writerow({
+                    "symbol": row.get("symbol"),
+                    "signal_time": row.get("signal_time"),
+                    "m3_tier": row.get("m3_tier"),
+                    "m3_market_state": row.get("m3_market_state"),
+                    "m3_resistance_source": row.get("m3_resistance_source"),
+                    "m3_entry_time": row.get("m3_entry_time"),
+                    "m3_entry": row.get("m3_entry"),
+                    "m3_stop": row.get("m3_stop"),
+                    "m3_atr": row.get("m3_atr"),
+                    "m3_risk_atr": row.get("m3_risk_atr"),
+                    **{k: point.get(k) for k in fields if k in point},
+                })
+
+
 def main(root="shard_outputs"):
     reports = _load(root)
     merged = merge_reports(reports)
@@ -307,6 +336,10 @@ def main(root="shard_outputs"):
         f.write(_summary(merged))
     with open(os.path.join(OUTPUT_DIR, "m3_v1_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(merged.get("manifest"), f, ensure_ascii=False, indent=2)
+    _write_path_points_csv(
+        os.path.join(OUTPUT_DIR, "m3_v11_path_points.csv"),
+        merged.get("candidates") or [],
+    )
 
     print(json.dumps(merged["analysis"], ensure_ascii=False, indent=2, default=str))
     return 0
