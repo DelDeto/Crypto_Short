@@ -249,7 +249,11 @@ def run_scan():
         "m2_live_signal_count": len(m2_live_signals),
         "deep_symbols": deep_symbols,
         "m2_prefilter_context": market_prefilter_context,
-        "m2_prefilter_top": sorted(\n            fast_rows,\n            key=lambda x: -float(x.get("m2_prefilter_score") or 0.0),\n        )[:30],\n        "results": results,
+        "m2_prefilter_top": sorted(
+            fast_rows,
+            key=lambda x: -float(x.get("m2_prefilter_score") or 0.0),
+        )[:30],
+        "results": results,
         "m2_live_signals": m2_live_signals,
         "errors": {
             "fast": fast_errors,
