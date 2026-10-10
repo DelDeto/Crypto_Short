@@ -1,0 +1,110 @@
+name: Crypto Short M3 V3.5 Frozen OOS Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      oos_days:
+        description: "Temporal OOS window days"
+        required: true
+        default: "60"
+      symbol_limit:
+        description: "Frozen MEXC perp cohort"
+        required: true
+        default: "120"
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/m3_v35_*.py"
+      - ".github/workflows/m3-v35-frozen-oos-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-m3-v35-frozen-oos
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      M3_V35_OOS_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.oos_days || '60' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q short_algo
+      - name: Freeze M3 V3.5 OOS cohort
+        run: python -m short_algo.m3_v35_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M3-V35-Manifest
+          path: output/m3_v35_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    needs: prepare
+    name: m3-v35-shard-${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      M3_V35_MANIFEST_PATH: "frozen/m3_v35_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: M3-V35-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay M3 V3.5 temporal OOS
+        run: python -m short_algo.m3_v35_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M3-V35-Shard-${{ matrix.shard }}
+          path: |
+            output/m3_v35_backtest.json
+            output/m3_v35_rows.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: M3-V35-Shard-*
+          path: m3v35_shards
+      - run: python -m short_algo.m3_v35_merge m3v35_shards
+      - run: cat output/m3_v35_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M3-V35-Frozen-OOS-Final
+          path: |
+            output/m3_v35_analysis.json
+            output/m3_v35_summary.md
+          if-no-files-found: error
+          retention-days: 14
