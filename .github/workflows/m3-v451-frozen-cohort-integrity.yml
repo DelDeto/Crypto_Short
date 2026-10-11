@@ -1,0 +1,113 @@
+name: Crypto Short M3 V4.5.1 Frozen Cohort Integrity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-m3-v451-frozen-cohort-integrity
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      M3_V441_MANIFEST_PATH: output/m3_v451_manifest.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q short_algo
+      - name: Build immutable V4.4.1 cohort manifest
+        run: python -m short_algo.m3_v451_prepare
+      - name: Preflight data and cohort integrity
+        run: python -m short_algo.m3_v451_preflight
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M3-V451-Prepare
+          path: |
+            output/m3_v451_manifest.json
+            output/m3_v451_preflight.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    needs: prepare
+    name: m3-v451-shard-${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      M3_V45_MANIFEST_PATH: frozen/m3_v451_manifest.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: M3-V451-Prepare
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay unchanged V4.5 engine on frozen cohort
+        run: python -m short_algo.m3_v45_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M3-V451-Shard-${{ matrix.shard }}
+          path: output/m3_v45_backtest.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: M3-V451-Shard-*
+          path: m3v451_shards
+      - uses: actions/download-artifact@v4
+        with:
+          name: M3-V451-Prepare
+          path: frozen
+      - name: Merge unchanged V4.5 attribution
+        run: python -m short_algo.m3_v45_merge m3v451_shards frozen/m3_v451_preflight.json
+      - name: Enforce V4.4.1 replication gate
+        run: python -m short_algo.m3_v451_verify output/m3_v45_analysis.json frozen/m3_v451_manifest.json
+      - if: always()
+        run: |
+          if [ -f output/m3_v451_summary.md ]; then cat output/m3_v451_summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -f output/m3_v45_summary.md ]; then cat output/m3_v45_summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M3-V451-Frozen-Cohort-Integrity-Final
+          path: |
+            output/m3_v45_analysis.json
+            output/m3_v45_summary.md
+            output/m3_v451_integrity.json
+            output/m3_v451_summary.md
+            frozen/m3_v451_manifest.json
+            frozen/m3_v451_preflight.json
+          if-no-files-found: warn
+          retention-days: 14
