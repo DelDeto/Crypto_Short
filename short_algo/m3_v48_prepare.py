@@ -46,9 +46,9 @@ def build_manifest():
         "frozen_symbol_sha256":FROZEN_SYMBOL_SHA256,
         "hypotheses":M3_V48_HYPOTHESES,
         "thresholds":thresholds,
-        "selection":"immutable cohort + fixed 2025 holdout; structural-quality hypotheses frozen from V4.7 before run",
+        "selection":"immutable cohort + fixed V4.2-era holdout; V4.7 structural-quality hypotheses frozen before run",
         "research_status":"STRUCTURAL_QUALITY_HYPOTHESIS_HOLDOUT_NOT_FULL_STRATEGY_OOS",
-        "caveat":"This 2025 window was previously used for exit-policy validation. It is independent for the V4.7 structural-quality hypotheses, but not untouched for the full strategy/exit lineage.",
+        "caveat":"This 2025-12 to 2026-04 window was previously used for structural-policy/base-strategy validation. It is independent for hypotheses generated from V4.7, but is not untouched for the full strategy lineage.",
     }
 
 def main():
