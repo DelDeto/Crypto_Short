@@ -2,6 +2,11 @@ name: Crypto Short M3 V4.5.1 Frozen Cohort Integrity
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/m3_v451_*.py"
+      - ".github/workflows/m3-v451-frozen-cohort-integrity.yml"
 
 permissions:
   contents: read
