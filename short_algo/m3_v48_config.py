@@ -1,7 +1,7 @@
-"""M3 V4.8 - pre-registered structural-quality validation on an independent historical holdout."""
-M3_V48_PERIOD_START="2025-04-07T00:00:00+00:00"
-M3_V48_PERIOD_END="2025-08-05T00:00:00+00:00"
-M3_V48_FUTURE_END="2025-08-07T00:00:00+00:00"
+"""M3 V4.8 - pre-registered structural-quality validation on a data-available historical holdout."""
+M3_V48_PERIOD_START="2025-12-07T05:00:00+00:00"
+M3_V48_PERIOD_END="2026-04-06T05:00:00+00:00"
+M3_V48_FUTURE_END="2026-04-08T05:00:00+00:00"
 M3_V48_BLOCK_DAYS=30
 M3_V48_BLOCK_COUNT=4
 
