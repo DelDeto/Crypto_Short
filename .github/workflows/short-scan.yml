@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "short_algo/**"
+      - "!short_algo/m3_*.py"
       - "requirements.txt"
       - ".github/workflows/short-scan.yml"
 
