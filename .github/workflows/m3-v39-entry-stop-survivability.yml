@@ -1,0 +1,115 @@
+name: Crypto Short M3 V3.9 Entry Stop Survivability
+
+on:
+  workflow_dispatch:
+    inputs:
+      block_days:
+        description: "Days per entry-quality block"
+        required: true
+        default: "30"
+      block_count:
+        description: "Number of frozen blocks"
+        required: true
+        default: "4"
+      symbol_limit:
+        description: "Frozen MEXC perp cohort"
+        required: true
+        default: "120"
+  push:
+    branches: [main]
+    paths:
+      - "short_algo/m3_v39_*.py"
+      - ".github/workflows/m3-v39-entry-stop-survivability.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-m3-v39-entry-stop-survivability
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      M3_V39_BLOCK_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.block_days || '30' }}
+      M3_V39_BLOCK_COUNT: ${{ github.event_name == 'workflow_dispatch' && inputs.block_count || '4' }}
+      BACKTEST_SYMBOL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.symbol_limit || '120' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q short_algo
+      - name: Freeze M3 V3.9 entry-quality windows
+        run: python -m short_algo.m3_v39_prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M3-V39-Manifest
+          path: output/m3_v39_manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  backtest:
+    needs: prepare
+    name: m3-v39-shard-${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    env:
+      PYTHONUNBUFFERED: "1"
+      BACKTEST_SHARD_INDEX: ${{ matrix.shard }}
+      BACKTEST_SHARD_COUNT: "12"
+      M3_V39_MANIFEST_PATH: "frozen/m3_v39_manifest.json"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: M3-V39-Manifest
+          path: frozen
+      - run: python -m compileall -q short_algo
+      - name: Replay M3 V3.9 entry-stop study
+        run: python -m short_algo.m3_v39_main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M3-V39-Shard-${{ matrix.shard }}
+          path: |
+            output/m3_v39_backtest.json
+            output/m3_v39_rows.csv
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge:
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: M3-V39-Shard-*
+          path: m3v39_shards
+      - run: python -m short_algo.m3_v39_merge m3v39_shards
+      - run: cat output/m3_v39_summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: M3-V39-Entry-Stop-Survivability-Final
+          path: |
+            output/m3_v39_analysis.json
+            output/m3_v39_summary.md
+          if-no-files-found: error
+          retention-days: 14
