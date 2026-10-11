@@ -117,7 +117,7 @@ def main(root="m3v48_shards",preflight_path="frozen/m3_v48_preflight.json"):
         "selected_shadow_candidate":selected,
         "live_promotion":False,
         "research_status":"STRUCTURAL_HYPOTHESIS_HOLDOUT_COMPLETE_NOT_LIVE_PROMOTION" if data_valid else "DATA_INVALID",
-        "note":"Thresholds were frozen from V4.7 before this run. The 2025 holdout had prior use for exit-policy validation, so this validates the structural-quality hypotheses only. Passing yields a shadow candidate, never automatic live promotion.",
+        "note":"Thresholds were frozen from V4.7 before this run. The 2025-12 to 2026-04 holdout was previously used for structural-policy/base-strategy validation, so V4.8 validates the newly generated structural-quality hypotheses only. Passing yields a shadow candidate, never automatic live promotion.",
     }
     os.makedirs(OUTPUT_DIR,exist_ok=True)
     with open(os.path.join(OUTPUT_DIR,"m3_v48_analysis.json"),"w",encoding="utf-8") as f:json.dump(out,f,ensure_ascii=False,indent=2,default=str)
@@ -126,7 +126,7 @@ def main(root="m3v48_shards",preflight_path="frozen/m3_v48_preflight.json"):
         f.write(f"Decision: **{decision}**\n\n")
         f.write(json.dumps(out,ensure_ascii=False,indent=2))
         f.write("\n")
-    print(json.dumps({"decision":decision,"data_valid":data_valid,"results":{k:v["metrics"] for k,v in results.items()},"gates":{k:v["validation_gate"] for k,v in results.items()}},ensure_ascii=False,indent=2))
+    print(json.dumps({"decision":decision,"data_valid":data_valid,"eligible_symbols":eligible,"results":{k:v["metrics"] for k,v in results.items()},"gates":{k:v["validation_gate"] for k,v in results.items()}},ensure_ascii=False,indent=2))
     return 0 if data_valid else 2
 
 if __name__=="__main__":
