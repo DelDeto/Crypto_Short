@@ -1,0 +1,120 @@
+name: Crypto Short M4 V0.1-V0.2 Event Study (Research Only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "m4_research/**"
+      - ".github/workflows/m4-event-study.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crypto-short-m4-research-event-study
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      M4_MEXC_BASE_URL: https://api.mexc.com
+      M4_SHARD_COUNT: "8"
+      M4_MAX_SYMBOLS: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile M4 sources
+        run: python -m compileall -q m4_research
+      - name: Verify H1 no-leakage, labels and control matching
+        run: python -m m4_research.selftest
+      - name: Freeze complete MEXC futures universe and exploration window
+        run: python -m m4_research.prepare
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M4-V01-Manifest
+          path: output/m4/manifest.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  scan:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    name: m4-study-shard-${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      PYTHONUNBUFFERED: "1"
+      M4_MEXC_BASE_URL: https://api.mexc.com
+      M4_SHARD_INDEX: ${{ matrix.shard }}
+      M4_SHARD_COUNT: "8"
+      M4_MANIFEST_PATH: frozen/m4/manifest.json
+      M4_OUTPUT_DIR: output/m4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: M4-V01-Manifest
+          path: frozen/m4
+      - name: Historical 1h research scan (no live signals)
+        run: python -m m4_research.shard
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M4-V02-Shard-${{ matrix.shard }}
+          path: output/m4/shard.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  merge:
+    needs: scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      M4_OUTPUT_DIR: output/m4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: M4-V02-Shard-*
+          path: m4_shards
+      - uses: actions/download-artifact@v4
+        with:
+          name: M4-V01-Manifest
+          path: frozen/m4
+      - name: Cross-symbol as-of-time matched-control study
+        run: python -m m4_research.merge m4_shards frozen/m4/manifest.json
+      - name: Publish research summary
+        if: always()
+        run: |
+          if [ -f output/m4/m4_summary.md ]; then cat output/m4/m4_summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M4-V02-Event-Study-Final
+          path: |
+            output/m4/m4_study.json
+            output/m4/m4_events.csv
+            output/m4/m4_matched_controls.csv
+            output/m4/m4_coverage.csv
+            output/m4/m4_summary.md
+            frozen/m4/manifest.json
+          if-no-files-found: warn
+          retention-days: 30
