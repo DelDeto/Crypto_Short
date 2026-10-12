@@ -1,0 +1,29 @@
+{
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "protocol_sha256": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "freeze_start_utc": "2026-10-13T00:00:00+00:00",
+  "locked_at_utc": "2026-10-12T08:50:40.285887+00:00",
+  "rules": {
+    "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+    "freeze_start_utc": "2026-10-13T00:00:00+00:00",
+    "cadence_hours": 4,
+    "prior18h_min_pct": 10.0,
+    "last6h_max_pct": -2.0,
+    "relative_last6h_max_pp": -3.0,
+    "min_asof_24h_quote_turnover_usdt": 300000.0,
+    "horizons_hours": [
+      24,
+      48
+    ],
+    "first_evaluation_after_calendar_days": 60,
+    "first_evaluation_min_matched_events": 50,
+    "first_evaluation_min_unique_days": 20,
+    "benchmark": "same-UTC candidates with runup and liquidity, no H3 flag; frozen at capture",
+    "research_only": true,
+    "short_orders_disabled": true,
+    "signal_registration": "Close of last fully completed 1h bar, sampled every 4h; no retrospectively inserted H3 signals",
+    "forward_entry_reference": "Open of the 1h candle beginning one full hour after signal becomes available; NOT a guaranteed fill"
+  },
+  "no_prior_outcome_analysis": true,
+  "status": "REGISTERED_BEFORE_START"
+}
