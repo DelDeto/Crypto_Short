@@ -6,6 +6,9 @@ from .features import read_features,match_asof
 from .capture import scan
 from .settle import settle_batch,future_outcomes
 from .first_look import evaluation
+from .lock import lock_protocol
+from pathlib import Path
+import tempfile
 
 def make_frame(symbol,closed):
     ts=pd.date_range(closed-pd.Timedelta(hours=30),periods=31,freq="h",tz="UTC")
@@ -35,6 +38,15 @@ def outcome_frame(symbol,entry,end):
 
 def main():
     assert len(PROTOCOL_HASH)==64
+    with tempfile.TemporaryDirectory() as td:
+        p=Path(td)/"lock.json"
+        obj=lock_protocol(p,pd.Timestamp("2026-10-12T10:00:00Z").to_pydatetime())
+        assert obj["protocol_sha256"]==PROTOCOL_HASH
+        assert lock_protocol(p,pd.Timestamp("2026-10-15T00:00:00Z").to_pydatetime())==obj
+        late=Path(td)/"late.json"
+        try:lock_protocol(late,pd.Timestamp("2026-10-13T00:00:00Z").to_pydatetime())
+        except RuntimeError:pass
+        else:raise AssertionError("Late preregistration incorrectly allowed")
     now=pd.Timestamp("2026-10-13T04:17:00+00:00")
     closed=pd.Timestamp("2026-10-13T03:00:00+00:00")
     symbols=["BTC_USDT","ALT_USDT"]+[f"CTRL{i}_USDT" for i in range(51)]
