@@ -1,0 +1,43 @@
+{
+  "registry_version": "2026-10-12",
+  "purpose": "Prevent retroactive hypothesis promotion and accidental tuning",
+  "hypotheses": [
+    {
+      "id": "M4_H1_FAILED_BREAKOUT_V1",
+      "source_run_id": 38206513291,
+      "status": "NOT_CONFIRMED",
+      "historical_sample_893": true,
+      "observed_24h_mean_short_pct": -1.491235,
+      "matched_24h_edge_pp": 0.263021,
+      "reason": "Mean outright short negative, day cluster bootstrap CI included zero, no OOS or execution model",
+      "live_promotion": false
+    },
+    {
+      "id": "M4_H2_BREAKDOWN_CONFIRMATION_V1",
+      "source_run_id": 38221097067,
+      "status": "NOT_CONFIRMED",
+      "historical_sample_893": true,
+      "confirmed_512": true,
+      "observed_24h_mean_short_pct": -1.21671,
+      "matched_24h_edge_pp": 0.013418,
+      "reason": "Near-zero matched edge; worse late short mean and same discovery sample",
+      "live_promotion": false
+    },
+    {
+      "id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+      "status": "PREREGISTRATION_PENDING_INITIAL_GITHUB_LOCK",
+      "forward_sample_not_before_utc": "2026-10-13T00:00:00+00:00",
+      "first_look_utc_no_earlier_than": "2026-12-14T12:00:00+00:00",
+      "evaluation_policy": "60d plus 60h maturity; no interim performance reports",
+      "source_code": "m4_forward/protocol.py",
+      "live_promotion": false
+    }
+  ],
+  "constraints": [
+    "Do not call H1/H2 validated",
+    "Do not test H3 on H1 discovery sample",
+    "No H3 retuning after lock",
+    "No trade alerts or live orders",
+    "Single first look only after 60 days"
+  ]
+}
