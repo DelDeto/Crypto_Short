@@ -1,4 +1,4 @@
-name: Crypto Short M3 V4.9 Shallow Retest Forward Shadow
+name: Crypto Short M3 V4.9.1 Prospective Shadow Audit
 
 on:
   workflow_dispatch:
@@ -21,6 +21,8 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      window_ready: ${{ steps.manifest.outputs.window_ready }}
     env:
       M3_V49_MANIFEST_PATH: output/m3_v49_manifest.json
     steps:
@@ -30,23 +32,34 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python -m compileall -q short_algo
-      - name: Build expanding forward-shadow manifest
+      - name: Build strictly prospective H1 manifest
+        id: manifest
         run: python -m short_algo.m3_v49_prepare
       - name: Preflight frozen H1 and context data
         run: python -m short_algo.m3_v49_preflight
+      - name: Summary of prospective maturity
+        if: always()
+        run: |
+          if [ -f output/m3_v49_manifest.json ]; then
+            python -c "import json; m=json.load(open('output/m3_v49_manifest.json')); print('M3 V4.9.1:',m['manifest_status'],'| start:',m['period_start'],'| matured days:',m['forward_days'])"
+            if [ "${{ steps.manifest.outputs.window_ready }}" != "true" ]; then
+              echo "No mature post-freeze trades yet; backtest and merge intentionally skipped." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: M3-V49-Prepare
+          name: M3-V491-Prepare
           path: |
             output/m3_v49_manifest.json
             output/m3_v49_preflight.json
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 60
 
   backtest:
     needs: prepare
-    name: m3-v49-shard-${{ matrix.shard }}
+    if: needs.prepare.outputs.window_ready == 'true'
+    name: m3-v491-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
@@ -66,21 +79,22 @@ jobs:
       - run: pip install -r requirements.txt
       - uses: actions/download-artifact@v4
         with:
-          name: M3-V49-Prepare
+          name: M3-V491-Prepare
           path: frozen
       - run: python -m compileall -q short_algo
-      - name: Replay unchanged M3 strategy on forward window
+      - name: Replay unchanged M3 execution after rule freeze
         run: python -m short_algo.m3_v49_main
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: M3-V49-Shard-${{ matrix.shard }}
+          name: M3-V491-Shard-${{ matrix.shard }}
           path: output/m3_v49_backtest.json
           if-no-files-found: warn
           retention-days: 14
 
   merge:
-    needs: backtest
+    needs: [prepare, backtest]
+    if: needs.prepare.outputs.window_ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -91,13 +105,13 @@ jobs:
       - run: pip install -r requirements.txt
       - uses: actions/download-artifact@v4
         with:
-          pattern: M3-V49-Shard-*
+          pattern: M3-V491-Shard-*
           path: m3v49_shards
       - uses: actions/download-artifact@v4
         with:
-          name: M3-V49-Prepare
+          name: M3-V491-Prepare
           path: frozen
-      - name: Evaluate sequential forward shadow
+      - name: Evaluate forward integrity and publish trade ledger
         run: python -m short_algo.m3_v49_merge m3v49_shards frozen/m3_v49_preflight.json
       - if: always()
         run: |
@@ -105,11 +119,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: M3-V49-Shallow-Retest-Forward-Shadow-Final
+          name: M3-V491-Prospective-Shadow-Final
           path: |
             output/m3_v49_analysis.json
             output/m3_v49_summary.md
+            output/m3_v49_trade_ledger.csv
             frozen/m3_v49_manifest.json
             frozen/m3_v49_preflight.json
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 60
