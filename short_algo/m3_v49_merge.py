@@ -176,7 +176,7 @@ def main(root="m3v49_shards",preflight_path="frozen/m3_v49_preflight.json"):
     with open(ledger_path,"w",newline="",encoding="utf-8") as f:
         writer=csv.DictWriter(f,fieldnames=fieldnames)
         writer.writeheader();writer.writerows(ledger)
-    ledger_sha=hashlib.sha256(open(ledger_path,"rb").read()).hexdigest()
+    with open(ledger_path,"rb") as f:ledger_sha=hashlib.sha256(f.read()).hexdigest()
     out["trade_ledger_sha256"]=ledger_sha
     with open(os.path.join(OUTPUT_DIR,"m3_v49_analysis.json"),"w",encoding="utf-8") as f:
         json.dump(out,f,ensure_ascii=False,indent=2,default=str)
@@ -189,7 +189,7 @@ def main(root="m3v49_shards",preflight_path="frozen/m3_v49_preflight.json"):
         f.write("| Strategy | Trades | TP% | SL% | Exp (R) | Max DD (R) |\n|---|---:|---:|---:|---:|---:|\n")
         for label,met in (("Baseline",baseline),("H1 Shallow Retest",h1)):
             f.write(f"| {label} | {met['entries']} | {met['target_hit_pct']} | {met['sl_hit_pct']} | {met['expectancy_r']} | {met['max_drawdown_r_signal_order']} |\n")
-        f.write(f"\nReadiness checks: \`{json.dumps(readiness['checks'])}\`\n\n")
+        f.write(f"\nReadiness checks: `{json.dumps(readiness['checks'])}`\n\n")
         f.write("**Caveat:** Reconstructed historical-candle replay, not a timestamped live paper-trading ledger. CI not multiple-look adjusted.\n")
     print(json.dumps({
         "decision":decision,"data_valid":data_valid,"forward_days":forward_days,
