@@ -1,0 +1,86 @@
+name: Crypto Short M4 V0.2.3 Frozen H3 Forward Registry
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 0,4,8,12,16,20 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "m4_forward/**"
+      - ".github/workflows/m4-v023-forward-registry.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crypto-short-m4-v023-append-only-registry
+  cancel-in-progress: false
+
+jobs:
+  prospective_registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: "1"
+      M4_MEXC_BASE_URL: https://api.mexc.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile protocol and test time-causal integrity offline
+        run: |
+          python -m compileall -q m4_forward
+          python -m m4_forward.selftest
+      - name: Register immutable H3 rules before forward start
+        run: python -m m4_forward.lock
+      - name: Capture latest closed-hour H3 market observation (no orders)
+        run: python -m m4_forward.capture
+      - name: Settle ONLY previously stored mature 24h/48h outcomes
+        run: python -m m4_forward.settle
+      - name: Apply single predeclared 60-day first-look gate
+        run: python -m m4_forward.first_look
+      - name: Persist append-only evidence in the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/m4_forward
+          if git diff --cached --quiet; then
+            echo "No new protocol, snapshot or mature outcome to commit"
+          else
+            git commit -m "research(m4): append immutable H3 forward evidence [skip ci]"
+            pushed=false
+            for attempt in 1 2 3; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then
+                pushed=true
+                break
+              fi
+              echo "Push conflict on attempt ${attempt}; will retry"
+            done
+            if [ "$pushed" != "true" ]; then
+              echo "Failed to persist M4 evidence; inspect before claiming data was recorded"
+              exit 1
+            fi
+          fi
+      - name: Show observation status
+        if: always()
+        run: |
+          if [ -f output/m4_forward/settlement_audit.json ]; then
+            cat output/m4_forward/settlement_audit.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "M4 H3 is RESEARCH ONLY; never an order, trading signal, or performance claim." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M4-V023-H3-Forward-Registry
+          path: |
+            output/m4_forward/*.json
+            state/m4_forward/H3_protocol_lock.json
+          if-no-files-found: warn
+          retention-days: 21
