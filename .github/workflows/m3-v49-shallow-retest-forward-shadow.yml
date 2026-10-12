@@ -32,6 +32,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python -m compileall -q short_algo
+      - name: Run offline prospective-integrity smoke tests
+        run: python -m short_algo.m3_v49_selftest
       - name: Build strictly prospective H1 manifest
         id: manifest
         run: python -m short_algo.m3_v49_prepare
