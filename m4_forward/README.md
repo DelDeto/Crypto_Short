@@ -24,7 +24,7 @@ For each detected H3 event, matched controls are frozen **at that same observati
 
 ## Point-in-time recording and audit
 
-- `m4_forward.capture` selects the currently active USDT futures universe **at each run**; 685 symbols is not a hardcoded number.
+- `m4_forward.lock` creates a write-once preregistration record at `state/m4_forward/H3_protocol_lock.json` **before** the forward start. Collection is refused if the stored SHA256 of the rules differs or if the lock was not created before the start.\n- `m4_forward.capture` selects the currently active USDT futures universe **at each run**; 685 symbols is not a hardcoded number.
 - Does NOT use today's coin list to reconstruct historical populations. Coverage, missing histories, API failures and eligible symbols are recorded.
 - Snapshot records only as-of variables and *no outcomes*; it is committed to `state/m4_forward/snapshots/m4-h3-YYYYMMDDTHHZ.json`. Each path is **write-once**. No catch-up reconstruction of missed 4h snapshots.
 - Signal time is the end of the last completed 1h candle. Capture must finish **before** the prospective reference entry (open of the *next full* hourly candle). Captures that finish late are invalid, not retroactive signals.
@@ -51,6 +51,7 @@ Even if all hold: **no live promotion or claim of actual net profit**. Research 
 
 ```
 python -m m4_forward.selftest
+python -m m4_forward.lock
 python -m m4_forward.capture
 python -m m4_forward.settle
 python -m m4_forward.first_look
