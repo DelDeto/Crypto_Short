@@ -11,6 +11,7 @@ import hashlib,json,os
 import pandas as pd
 from m4_research.market import fetch_hourly,snapshot_universe
 from .features import read_features,match_asof,H
+from .lock import lock_protocol
 from .protocol import PROTOCOL_HASH,FREEZE_START_UTC,HYPOTHESIS_ID,rules,prospective_started
 
 def _utc(ts):
@@ -92,6 +93,8 @@ def scan(now=None,symbol_fn=snapshot_universe,fetch_fn=fetch_hourly):
     return result
 
 def main():
+    # Fail closed on an absent/late or edited pre-registration lock.
+    lock_protocol()
     r=scan()
     Path("output/m4_forward").mkdir(parents=True,exist_ok=True)
     if r["status"]=="PRE_FREEZE_NO_COLLECTION":
@@ -115,6 +118,6 @@ def main():
         "h3_cases":len(r["h3_cases"]),"with_controls":r["matched_h3_cases"],
         "snapshot_file":str(state_path),"freeze_utc":FREEZE_START_UTC
     },ensure_ascii=False,indent=2))
-    return 0 if r["status"]=="REGISTERED" else 2
+    return 0  # Archive INVALID snapshots explicitly; do not pretend they are valid evidence.
 
 if __name__=="__main__":raise SystemExit(main())
