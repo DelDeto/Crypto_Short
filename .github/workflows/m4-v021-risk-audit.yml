@@ -1,0 +1,65 @@
+name: Crypto Short M4 V0.2.1 Risk & Robustness Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "m4_audit/**"
+      - ".github/workflows/m4-v021-risk-audit.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: crypto-short-m4-v021-risk-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONUNBUFFERED: "1"
+      M4_MEXC_BASE_URL: https://api.mexc.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Download exact M4 V0.2 final artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 38206513291
+          repository: DelDeto/Crypto_Short
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: M4-V02-Event-Study-Final
+          path: frozen/v02
+      - name: Verify frozen study integrity and tail-risk calculations
+        run: |
+          python -m compileall -q m4_audit
+          python -m m4_audit.selftest
+      - name: Run V0.2.1 risk, robustness and extreme-candle audit
+        run: python -m m4_audit.audit --check-market
+      - name: Post research-only summary
+        if: always()
+        run: |
+          if [ -f output/m4_v021/m4_v021_summary.md ]; then
+            cat output/m4_v021/m4_v021_summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M4-V021-Risk-Robustness-Final
+          path: |
+            output/m4_v021/m4_v021_audit.json
+            output/m4_v021/m4_v021_summary.md
+            output/m4_v021/m4_v021_extreme_events.csv
+            output/m4_v021/m4_v021_rechecks.csv
+            output/m4_v021/m4_v021_daily.csv
+            output/m4_v021/m4_v021_weekly.csv
+            output/m4_v021/m4_v021_btc_regime.csv
+          if-no-files-found: warn
+          retention-days: 45
