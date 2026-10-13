@@ -317,7 +317,7 @@ def analyze(study_id, root=ROOT, *, max_event_rows=0, include_daily=False):
             "Non-independent, exploratory daily variation. "
             "Not an inferential test, not a p-value or proof of Short edge."
         )
-        report["multiple_testing": (
+        report["multiple_testing"] = (
             "8 event families x 4 outcome horizons. Do not select a "
             "winner from positive descriptive means without new untouched evidence.")
         ]
