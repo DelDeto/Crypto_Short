@@ -33,6 +33,15 @@ For each detected H3 event, matched controls are frozen **at that same observati
 
 The 4-hour collection schedule creates periodic **snapshots**, not continuous 1h market coverage. Signals that happen between snapshots are *not observed* and must not be backfilled retrospectively. Github Actions may run late or be skipped. Explicitly keep the log of missing/invalid runs.
 
+## V0.2.4 operational reliability (does NOT alter the frozen H3 protocol)
+
+- GitHub attempts each canonical 4h capture at **:17**, with a **:47** backup. A completed canonical snapshot is detected **before fetching any market candles**, avoiding duplicate expense and any overwrite. This is best-effort, not an exactly-once delivery guarantee.
+- Manual runs outside canonical UTC hours 00/04/08/12/16/20 do NOT register extra samples.
+- Captures finishing after the hypothetical entry's start are flagged INVALID, never interpreted as causal signals.
+- `python -m m4_forward.health` reports only registry integrity, count of missing slots after two hours of grace, age of the newest valid snapshot and snapshot/outcome-link SHA verification. **It never opens outcome performance metrics.**
+- A missing GitHub cron is recorded as a gap; no artificial historical backfill or retuning is permitted. New operational code may be deployed, but `protocol.py` and its registered SHA256 **must not change**.
+- After code deployment, verify the latest GitHub Actions job produced a new `state/m4_forward/snapshots/` file and that it was committed to `main`, not merely printed to logs.
+
 ## Frozen sequential evidence gate
 
 **No performance results viewed before 60 calendar days and mature 48h outcomes.** `m4_forward.first_look` enforces this, with no weekly re-selection or repeated peeks.
@@ -55,6 +64,7 @@ python -m m4_forward.lock
 python -m m4_forward.capture
 python -m m4_forward.settle
 python -m m4_forward.first_look
+python -m m4_forward.health
 ```
 
 `.github/workflows/m4-v023-forward-collector.yml` runs on an approximately 4h GitHub schedule (GitHub scheduling is best-effort, not guaranteed). It writes the observations and subsequent outcomes to **new files only** under `state/m4_forward`, using GitHub's workflow token, plus per-run artifacts. If the repository disallows GitHub Actions writes, the run will show a failure and no persistent evidence will be claimed.
