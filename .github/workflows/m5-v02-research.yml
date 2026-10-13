@@ -1,0 +1,178 @@
+name: M5 V0.2 Historical Research Registry (No Orders)
+
+on:
+  push:
+    branches: [main, m5-v02-full-market-history]
+    paths:
+      - "m5_research/v02.py"
+      - "m5_research/v02_selftest.py"
+      - ".github/workflows/m5-v02-research.yml"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "pilot (safe), plan (freeze full universe), shard (resume), merge (only when complete)"
+        type: choice
+        required: true
+        default: pilot
+        options: [pilot, plan, shard, merge]
+      study_id:
+        description: "Study id from PLAN log. Required only for shard/merge."
+        type: string
+        required: false
+        default: ""
+      days:
+        description: "For plan mode: fixed history days 1..21 (longer requires object storage)"
+        type: number
+        required: true
+        default: 7
+      shards:
+        description: "For plan mode: number of deterministic shards"
+        type: number
+        required: true
+        default: 16
+      shard_index:
+        description: "For shard mode: 0..(shards-1)"
+        type: number
+        required: true
+        default: 0
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m5-v02-archive-single-writer
+  cancel-in-progress: false
+
+jobs:
+  offline_tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Assert 8-event causality and market-wide archive invariants
+        run: |
+          python -m compileall -q m5_research
+          python -m m5_research.selftest
+          python -m m5_research.v02_selftest
+
+  historical_registry:
+    needs: [offline_tests]
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      PYTHONUNBUFFERED: "1"
+      MODE: ${{ inputs.mode || 'pilot' }}
+      STUDY_ID: ${{ inputs.study_id || '' }}
+      DAYS: ${{ inputs.days || 7 }}
+      SHARDS: ${{ inputs.shards || 16 }}
+      SHARD_INDEX: ${{ inputs.shard_index || 0 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run pilot or incremental frozen-market study
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONUNBUFFERED=1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          persist_archive() {
+            git add state/m5_research
+            if git diff --cached --quiet; then
+              echo "No new study archive changes to persist"
+              return 0
+            fi
+            git commit -m "research(m5): append frozen historical study checkpoint [skip ci]"
+            done_push=false
+            for attempt in 1 2 3; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then
+                done_push=true
+                break
+              fi
+              echo "Archive push conflict; retrying ..."
+            done
+            if [ "$done_push" != true ]; then
+              echo "ARCHIVE WRITE FAILED: no evidence of durable checkpoint"
+              exit 1
+            fi
+          }
+          case "$MODE" in
+            pilot)
+              ROOT="output/m5_research/v02_pilot/studies"
+              python -m m5_research.v02 plan --days 2 --shards 1 \
+                --pilot-limit 5 --root "$ROOT"
+              STUDY_ID=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | head -1)
+              python -m m5_research.v02 shard --study-id "$STUDY_ID" \
+                --shard-index 0 --max-new 5 --root "$ROOT"
+              python -m m5_research.v02 merge --study-id "$STUDY_ID" \
+                --allow-pilot --root "$ROOT"
+              ;;
+            plan)
+              test "$GITHUB_REF" = "refs/heads/main" || {
+                echo "Permanent full-market plans can only be created from main"; exit 1;
+              }
+              python -m m5_research.v02 plan --days "$DAYS" --shards "$SHARDS"
+              persist_archive
+              ;;
+            shard)
+              test "$GITHUB_REF" = "refs/heads/main" || exit 1
+              test -n "$STUDY_ID" || { echo "Provide study_id"; exit 1; }
+              ready=false
+              for attempt in $(seq 1 15); do
+                if python -m m5_research.v02 status --study-id "$STUDY_ID" \
+                  --shard-index "$SHARD_INDEX"; then
+                  ready=true
+                  break
+                fi
+                python -m m5_research.v02 shard --study-id "$STUDY_ID" \
+                  --shard-index "$SHARD_INDEX" --max-new 5 || true
+                persist_archive
+              done
+              if [ "$ready" != true ]; then
+                if python -m m5_research.v02 status --study-id "$STUDY_ID" \
+                  --shard-index "$SHARD_INDEX"; then
+                  ready=true
+                fi
+              fi
+              test "$ready" = true || { echo "Incomplete shard; resumable by another run"; exit 1; }
+              ;;
+            merge)
+              test "$GITHUB_REF" = "refs/heads/main" || exit 1
+              test -n "$STUDY_ID" || { echo "Provide study_id"; exit 1; }
+              python -m m5_research.v02 merge --study-id "$STUDY_ID"
+              persist_archive
+              ;;
+            *)
+              echo "Unknown mode"; exit 1
+              ;;
+          esac
+      - name: Summarize M5 research scope
+        if: always()
+        run: |
+          echo "## M5 V0.2 Research (not trading signals)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Mode: $MODE" >> "$GITHUB_STEP_SUMMARY"
+          echo "Full research requires all frozen shards and a successful merge." >> "$GITHUB_STEP_SUMMARY"
+          echo "No future outcome labels or trading orders are calculated." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-V02-Research-${{ github.run_id }}
+          path: |
+            output/m5_research/
+            state/m5_research/studies/*/merged/research_manifest.json
+          if-no-files-found: warn
+          retention-days: 30
