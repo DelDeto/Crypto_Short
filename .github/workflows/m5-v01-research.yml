@@ -1,0 +1,114 @@
+name: M5 V0.1 Historical Event Research (No Orders)
+
+on:
+  push:
+    branches: [main, m5-v01-research-engine]
+    paths:
+      - "m5_research/**"
+      - ".github/workflows/m5-v01-research.yml"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Historical lookback days (1-240); start with 7-14, NOT 180"
+        type: number
+        required: true
+        default: 14
+      shards:
+        description: "Deterministic total number of universe shards"
+        type: number
+        required: true
+        default: 16
+      shard_index:
+        description: "Shard index: 0..shards-1"
+        type: number
+        required: true
+        default: 0
+      full_shard:
+        description: "Entire shard (heavy requests); unchecked limits symbols"
+        type: boolean
+        default: false
+      max_symbols:
+        description: "Bounded sample size: 1..50 (ignored for full shard)"
+        type: number
+        required: true
+        default: 12
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m5-historical-research-${{ github.ref }}-${{ inputs.shard_index || 'test' }}
+  cancel-in-progress: false
+
+jobs:
+  offline_tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Compile and check M5 historical causal integrity (NO network)
+        run: |
+          python -m compileall -q m5_research
+          python -m m5_research.selftest
+
+  historical_pilot:
+    needs: [offline_tests]
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONUNBUFFERED: "1"
+      M5_DAYS: ${{ inputs.days || 7 }}
+      M5_SHARDS: ${{ inputs.shards || 16 }}
+      M5_INDEX: ${{ inputs.shard_index || 0 }}
+      M5_LIMIT: ${{ inputs.max_symbols || 5 }}
+      M5_FULL: ${{ inputs.full_shard || false }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Research closed historical MEXC candles (NO orders)
+        shell: bash
+        run: |
+          extra=()
+          if [ "$M5_FULL" = "true" ]; then extra+=(--full-shard); fi
+          python -m m5_research.run \
+            --days "$M5_DAYS" \
+            --shards "$M5_SHARDS" \
+            --shard-index "$M5_INDEX" \
+            --max-symbols "$M5_LIMIT" \
+            "${extra[@]}"
+      - name: Summarize coverage and event counts without profit claims
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          manifests=list(Path("output/m5_research").glob("*/shard-*/manifest.json"))
+          if not manifests:
+              print("No M5 manifest produced")
+              raise SystemExit(0)
+          m=json.loads(manifests[-1].read_text())
+          selected=["status","catalogue_count","selected_count","accepted_symbol_count",
+                    "rejected_symbol_count","http_attempt_count","event_counts",
+                    "event_count_all_families","matched_control_events","warning"]
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"],"a") as f:
+              f.write("## M5 V0.1 Exploratory only (NO outcome / orders)\n")
+              for key in selected:
+                  f.write(f"- **{key}**: {m.get(key)}\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-V01-Historical-Study-${{ github.run_id }}
+          path: output/m5_research/
+          if-no-files-found: warn
+          retention-days: 30
