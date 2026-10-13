@@ -1,0 +1,42 @@
+{
+  "accepted_symbols": 680,
+  "all_symbol_file_hash_sha256": "94132155aa0245981dc9a0b8dda46c7bb13db1318d03f61735eaa9dde20465f7",
+  "archive_caveats": [
+    "Study universe is based on currently listed MEXC contracts; delisted coins missing",
+    "Matched control cohort excludes rejected instruments",
+    "Substantial across-coin and within-coin dependence",
+    "Control comparability uses as-of turnover and volatility, not proof of exchangeability",
+    "Historical exploration and chronological holdout are NOT prospective forward data",
+    "Raw OHLCV are not kept permanently; only compressed as-of features are Git-versioned"
+  ],
+  "asof_rows": 457640,
+  "catalogue_count": 687,
+  "data_policy": "IMMUTABLE_GIT_STUDY_FEATURES_AND_EVENT_REGISTRY",
+  "distinct_bar_times": 673,
+  "event_counts": {
+    "E01": 9079,
+    "E02": 2366,
+    "E03": 2359,
+    "E04": 362,
+    "E05": 8263,
+    "E06": 620,
+    "E07": 5889,
+    "E08": 4859
+  },
+  "event_observations_with_control": 33754,
+  "excluded_reasons": {
+    "INSUFFICIENT_HISTORY": 7
+  },
+  "excluded_symbols": 7,
+  "frozen_symbol_count": 687,
+  "no_order": true,
+  "no_outcome_study": true,
+  "no_profit_claim": true,
+  "overlapping_coin_time_observations": 6790,
+  "pilot": false,
+  "plan_sha256": "75b6fa4e73912e1ae3012991c58fc29410516d962625bfc5543370015a7481be",
+  "status": "FULL_FROZEN_COHORT_MERGED",
+  "study_id": "m5-full-20261013-7d",
+  "total_event_family_occurrences": 33797,
+  "version": "M5_V0.2_HISTORICAL_RESEARCH"
+}
