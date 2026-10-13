@@ -1,0 +1,70 @@
+name: M5 V0.2 First Full-Market 7-Day Cohort (Research Only)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m5-v02-full-kickoff.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m5-v02-archive-single-writer
+  cancel-in-progress: false
+
+jobs:
+  full_market_7d:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONUNBUFFERED: "1"
+      M5_STUDY_ID: m5-full-20261013-7d
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Recheck all M5 time-causal research and checkpoint invariants
+        run: |
+          python -m m5_research.selftest
+          python -m m5_research.v02_selftest
+      - name: Collect bounded 7-day all-market research in 16 sequential durable shards
+        run: bash m5_research/v02_kickoff.sh
+      - name: Show archive status (no trading recommendations)
+        if: always()
+        run: |
+          echo "## M5 7d whole-market historical event study" >> "$GITHUB_STEP_SUMMARY"
+          echo "Study ID: $M5_STUDY_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Code does NOT compute outcome PnL, entries, SL/TP or place orders." >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "state/m5_research/studies/$M5_STUDY_ID/merged/research_manifest.json" ]; then
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path("state/m5_research/studies")/os.environ["M5_STUDY_ID"]/"merged/research_manifest.json"
+          j=json.loads(p.read_text())
+          fields=("status","frozen_symbol_count","accepted_symbols","excluded_symbols",
+                  "total_event_family_occurrences","event_observations_with_control")
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as f:
+              for key in fields:
+                  f.write(f"- **{key}:** {j.get(key)}\n")
+          PY
+          else
+            echo "Research study NOT fully merged yet; inspect checkpoints and rerun this workflow." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-V02-7D-Cohort-Summary
+          path: |
+            state/m5_research/studies/m5-full-20261013-7d/plan.json
+            state/m5_research/studies/m5-full-20261013-7d/merged/research_manifest.json
+            output/m5_research/v02/chunk.json
+          if-no-files-found: warn
+          retention-days: 30
