@@ -1,0 +1,88 @@
+name: M5 V0.4 OHLC Execution and Risk Pilot (Research Only)
+
+on:
+  push:
+    branches: [main, m5-v04-execution-risk-pilot]
+    paths:
+      - ".github/workflows/m5-v04-risk.yml"
+      - "m5_research/v04_*.py"
+      - "m5_research/v04_kickoff.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m5-v04-single-writer
+  cancel-in-progress: false
+
+jobs:
+  offline_safety_tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Verify chronology and conservative OHLC execution assumptions
+        run: |
+          python -m compileall -q m5_research
+          python -m m5_research.selftest
+          python -m m5_research.v02_selftest
+          python -m m5_research.v03_selftest
+          python -m m5_research.v031_selftest
+          python -m m5_research.v04_selftest
+
+  ohlc_risk_pilot:
+    needs: [offline_safety_tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Freeze event choices BEFORE OHLC future, then analyze 48 historical samples
+        run: bash m5_research/v04_kickoff.sh
+      - name: Research result and caveats
+        if: always()
+        run: |
+          echo "## M5 V0.4 Execution Risk, exploratory only" >> "$GITHUB_STEP_SUMMARY"
+          echo "OHLC stop simulation is an approximation, not a real fill." >> "$GITHUB_STEP_SUMMARY"
+          echo "Same-bar ambiguous SL and TP resolve to SL first." >> "$GITHUB_STEP_SUMMARY"
+          echo "Historical sample overlaps inspected V0.3.1; NOT independent validation." >> "$GITHUB_STEP_SUMMARY"
+          if [ -f state/m5_research/execution/m5-v04-20261013-14d/risk/v04_risk_report.json ]; then
+            python - <<'PY'
+          from pathlib import Path
+          import os,json
+          p=Path("state/m5_research/execution/m5-v04-20261013-14d/risk/v04_risk_report.json")
+          j=json.loads(p.read_text())
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as f:
+              for key in ("status","selected_event_total","complete_matched_event_total",
+                          "instrument_count","ohlc_archived_count"):
+                  f.write(f"- **{key}:** {j.get(key)}\n")
+          PY
+          else
+            echo "Historical OHLC pilot is not complete. Rerun the SAME workflow." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-V04-Exploratory-Risk-Pilot-${{ github.run_id }}
+          path: |
+            state/m5_research/execution/m5-v04-20261013-14d/plan.json
+            state/m5_research/execution/m5-v04-20261013-14d/risk/
+            output/m5_research/v04_checkpoint.json
+          if-no-files-found: warn
+          retention-days: 30
