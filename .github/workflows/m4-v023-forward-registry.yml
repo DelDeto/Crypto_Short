@@ -38,6 +38,7 @@ jobs:
         run: |
           python -m compileall -q m4_forward
           python -m m4_forward.selftest
+          python -m m4_forward.provider_selftest
       - name: Register immutable H3 rules before forward start
         run: python -m m4_forward.lock
       - name: Capture latest closed-hour H3 market observation (no orders)
