@@ -58,8 +58,13 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Discover CLOSE-only future returns (never query holdout outcomes)
-        run: python -m m5_research.v03_discovery --study-id "$M5_STUDY"
+      - name: File discovery outcome only if not already sealed
+        run: |
+          if [ -f "state/m5_research/studies/$M5_STUDY/discovery/v03_close_only_report.json" ]; then
+            echo "Previously filed V0.3 report is immutable; skip repeated computation"
+          else
+            python -m m5_research.v03_discovery --study-id "$M5_STUDY"
+          fi
       - name: Commit immutable discovery-only audit, no strategy selection
         run: |
           set -euo pipefail
