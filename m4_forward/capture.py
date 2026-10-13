@@ -9,7 +9,8 @@ from datetime import datetime,timezone
 from pathlib import Path
 import hashlib,json,os
 import pandas as pd
-from m4_research.market import fetch_hourly,snapshot_universe
+from m4_research.market import snapshot_universe
+from .provider import fetch_hourly_paced
 from .features import read_features,match_asof,H
 from .lock import lock_protocol
 from .protocol import PROTOCOL_HASH,FREEZE_START_UTC,HYPOTHESIS_ID,rules,prospective_started
@@ -18,7 +19,7 @@ def _utc(ts):
     t=pd.Timestamp(ts)
     return t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
 
-def scan(now=None,symbol_fn=snapshot_universe,fetch_fn=fetch_hourly):
+def scan(now=None,symbol_fn=snapshot_universe,fetch_fn=fetch_hourly_paced):
     started=_utc(now or datetime.now(timezone.utc))
     last_closed=started.floor("h")-H
     signal_time=last_closed+H
