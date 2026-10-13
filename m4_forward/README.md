@@ -42,6 +42,27 @@ The 4-hour collection schedule creates periodic **snapshots**, not continuous 1h
 - A missing GitHub cron is recorded as a gap; no artificial historical backfill or retuning is permitted. New operational code may be deployed, but `protocol.py` and its registered SHA256 **must not change**.
 - After code deployment, verify the latest GitHub Actions job produced a new `state/m4_forward/snapshots/` file and that it was committed to `main`, not merely printed to logs.
 
+## MEXC 510 rate-limit handling (V0.2.4)
+
+The first new H3 capture (2026-10-13 04:00 UTC) was archived as
+`INVALID_CAPTURE_EXCLUDED_FROM_PRIMARY`: only **379 of 687**
+coins returned complete features (**55.17%**, beneath the frozen 70%
+data-validity threshold). **308 requests were rejected with MEXC API
+code 510: "Requests are too frequent".** This was transport failure,
+not evidence of H3 edge, and the affected snapshot remains immutable.
+
+`m4_forward/provider.py` provides a 0.80-second global spacing
+among five worker threads plus exponential backoff and cross-thread
+cooldown upon code 510 or HTTP 429/5xx. The collector and
+mature-outcome settler use this M4-only transport. It does **not**
+alter `m4_forward/protocol.py`, the H3 hypothesis SHA256, controls,
+minimum coverage gate, or any previous snapshot.
+
+If a canonical 4h slot is already archived as INVALID, backup/manual
+runs will not silently replace that old observation. Fixes are
+prospective only. GitHub success does not equal a valid H3 sample:
+check the `status` field and stored file at each future slot.
+
 ## Frozen sequential evidence gate
 
 **No performance results viewed before 60 calendar days and mature 48h outcomes.** `m4_forward.first_look` enforces this, with no weekly re-selection or repeated peeks.
@@ -60,6 +81,7 @@ Even if all hold: **no live promotion or claim of actual net profit**. Research 
 
 ```
 python -m m4_forward.selftest
+python -m m4_forward.provider_selftest
 python -m m4_forward.lock
 python -m m4_forward.capture
 python -m m4_forward.settle
