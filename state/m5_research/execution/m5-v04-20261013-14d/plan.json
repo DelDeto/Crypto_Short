@@ -1,0 +1,828 @@
+{
+  "eligible_discovery_event_counts": {
+    "E01": 11031,
+    "E02": 3000,
+    "E03": 3748,
+    "E04": 537,
+    "E05": 9895,
+    "E06": 1039,
+    "E07": 7431,
+    "E08": 6122
+  },
+  "entry_proxy": "NEXT_15M_BAR_OPEN_NO_LATENCY_FILLS_NOT_VERIFIED",
+  "event_sample": "deterministic_hash_one_event_per_day_per_family",
+  "events": [
+    {
+      "asof_close": 0.001678,
+      "bar_open_utc": "2026-09-30T18:30:00+00:00",
+      "controls": [
+        "COAI_USDT",
+        "ROSE_USDT"
+      ],
+      "event_day_utc": "2026-09-30",
+      "event_id": "E01",
+      "observed_at_utc": "2026-09-30T18:45:00+00:00",
+      "selection_hash": "000aba2e856f224536e613166fd43461d96935a05dd151d2a567e0dba3f9f5c0",
+      "symbol": "RSR_USDT"
+    },
+    {
+      "asof_close": 0.008728,
+      "bar_open_utc": "2026-10-05T04:00:00+00:00",
+      "controls": [
+        "APT_USDT",
+        "XPL_USDT"
+      ],
+      "event_day_utc": "2026-10-05",
+      "event_id": "E01",
+      "observed_at_utc": "2026-10-05T04:15:00+00:00",
+      "selection_hash": "0017344245df07deeced075f166013def024f3e341948138946cecc3edf28270",
+      "symbol": "VET_USDT"
+    },
+    {
+      "asof_close": 0.0024338,
+      "bar_open_utc": "2026-10-07T10:00:00+00:00",
+      "controls": [
+        "CVX_USDT",
+        "KITE_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E01",
+      "observed_at_utc": "2026-10-07T10:15:00+00:00",
+      "selection_hash": "00176c47ad7a9f4e98bd728acc70d011bc3b1b13c946387af421008aa7a3de59",
+      "symbol": "ZBCN_USDT"
+    },
+    {
+      "asof_close": 0.004883,
+      "bar_open_utc": "2026-10-06T03:15:00+00:00",
+      "controls": [
+        "MUSEBOOK_USDT",
+        "PAID_USDT"
+      ],
+      "event_day_utc": "2026-10-06",
+      "event_id": "E01",
+      "observed_at_utc": "2026-10-06T03:30:00+00:00",
+      "selection_hash": "00243a2deef5d7bf3de0d2273b36837a73078a965a7efe7b0dca28e983946fb1",
+      "symbol": "FONE_USDT"
+    },
+    {
+      "asof_close": 0.015882,
+      "bar_open_utc": "2026-10-04T18:15:00+00:00",
+      "controls": [
+        "TREAD_USDT",
+        "ALPINE_USDT"
+      ],
+      "event_day_utc": "2026-10-04",
+      "event_id": "E01",
+      "observed_at_utc": "2026-10-04T18:30:00+00:00",
+      "selection_hash": "0025edb89c4d5753ae9bf7949a012e5c05cfff73979cdc642664d4cc85247ea8",
+      "symbol": "DELTA_USDT"
+    },
+    {
+      "asof_close": 0.01851,
+      "bar_open_utc": "2026-10-08T15:00:00+00:00",
+      "controls": [
+        "COLLECT_USDT",
+        "AGI_USDT"
+      ],
+      "event_day_utc": "2026-10-08",
+      "event_id": "E01",
+      "observed_at_utc": "2026-10-08T15:15:00+00:00",
+      "selection_hash": "0029293b511bb7578c59076a2f18e3c8fcc36b584f5a8cc5e79722ea1199976c",
+      "symbol": "RESOLV_USDT"
+    },
+    {
+      "asof_close": 0.02272,
+      "bar_open_utc": "2026-09-30T08:30:00+00:00",
+      "controls": [
+        "MARSCOIN_USDT",
+        "ARK_USDT"
+      ],
+      "event_day_utc": "2026-09-30",
+      "event_id": "E02",
+      "observed_at_utc": "2026-09-30T08:45:00+00:00",
+      "selection_hash": "000fb75cba3b9f6d3dc4c60a5866cd55081b8df6d734a55712a07859c691f782",
+      "symbol": "XDP_USDT"
+    },
+    {
+      "asof_close": 0.12933,
+      "bar_open_utc": "2026-10-07T02:00:00+00:00",
+      "controls": [
+        "AIGENSYN_USDT",
+        "2Z_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E02",
+      "observed_at_utc": "2026-10-07T02:15:00+00:00",
+      "selection_hash": "0035ddbedd2a8c9ed934d55d44b3f6b0511c9869075b50a9a3846504b75da7f4",
+      "symbol": "GLM_USDT"
+    },
+    {
+      "asof_close": 0.226,
+      "bar_open_utc": "2026-10-08T15:00:00+00:00",
+      "controls": [
+        "SNXX_USDT",
+        "SPX_USDT"
+      ],
+      "event_day_utc": "2026-10-08",
+      "event_id": "E02",
+      "observed_at_utc": "2026-10-08T15:15:00+00:00",
+      "selection_hash": "004a6add897f10f5bdb696fe9326102bcbe85f8287fb0447ffe5633bdf54207a",
+      "symbol": "EIGEN_USDT"
+    },
+    {
+      "asof_close": 0.01889,
+      "bar_open_utc": "2026-10-02T16:45:00+00:00",
+      "controls": [
+        "BAT_USDT",
+        "PLUME_USDT"
+      ],
+      "event_day_utc": "2026-10-02",
+      "event_id": "E02",
+      "observed_at_utc": "2026-10-02T17:00:00+00:00",
+      "selection_hash": "007f8e0e67c3b9ef2fb13d8254a9dd3a6fb71ec8862125f56563833460df1346",
+      "symbol": "XDP_USDT"
+    },
+    {
+      "asof_close": 1.1646,
+      "bar_open_utc": "2026-10-06T09:15:00+00:00",
+      "controls": [
+        "FET_USDT",
+        "PUMPFUN_USDT"
+      ],
+      "event_day_utc": "2026-10-06",
+      "event_id": "E02",
+      "observed_at_utc": "2026-10-06T09:30:00+00:00",
+      "selection_hash": "0085f9f0a0a7e2608511c5852b3f604658d9a1ff9affd0f7310a1c2694ef7490",
+      "symbol": "FILECOIN_USDT"
+    },
+    {
+      "asof_close": 0.4171,
+      "bar_open_utc": "2026-10-05T13:45:00+00:00",
+      "controls": [
+        "AKT_USDT",
+        "PONS_USDT"
+      ],
+      "event_day_utc": "2026-10-05",
+      "event_id": "E02",
+      "observed_at_utc": "2026-10-05T14:00:00+00:00",
+      "selection_hash": "00b189063418b59f8b7c68ff16510524bfc9f1ff23064018620b14887f7a3c7c",
+      "symbol": "CT_USDT"
+    },
+    {
+      "asof_close": 0.1927,
+      "bar_open_utc": "2026-09-30T12:45:00+00:00",
+      "controls": [
+        "CHF_USDT",
+        "TRUTH_USDT"
+      ],
+      "event_day_utc": "2026-09-30",
+      "event_id": "E03",
+      "observed_at_utc": "2026-09-30T13:00:00+00:00",
+      "selection_hash": "001736e55c9d05415af2512b5f288f0dc34a343c0f65143c42479f85ebd158d6",
+      "symbol": "BRL_USDT"
+    },
+    {
+      "asof_close": 0.05595,
+      "bar_open_utc": "2026-10-02T12:30:00+00:00",
+      "controls": [
+        "FLUID_USDT",
+        "AVNT_USDT"
+      ],
+      "event_day_utc": "2026-10-02",
+      "event_id": "E03",
+      "observed_at_utc": "2026-10-02T12:45:00+00:00",
+      "selection_hash": "001aeddcdaab0b524f1b040913b79e962671784d9db42f52c3a6171c6c92b6f5",
+      "symbol": "IOTA_USDT"
+    },
+    {
+      "asof_close": 0.05521,
+      "bar_open_utc": "2026-10-05T11:15:00+00:00",
+      "controls": [
+        "BMT_USDT",
+        "AWE_USDT"
+      ],
+      "event_day_utc": "2026-10-05",
+      "event_id": "E03",
+      "observed_at_utc": "2026-10-05T11:30:00+00:00",
+      "selection_hash": "002c4668b50ec3a5b076bc66a21e2971e56ef08c4dadf3209a480e4511b403d9",
+      "symbol": "AEON1_USDT"
+    },
+    {
+      "asof_close": 0.16585,
+      "bar_open_utc": "2026-10-04T04:00:00+00:00",
+      "controls": [
+        "PHA_USDT",
+        "DYDX_USDT"
+      ],
+      "event_day_utc": "2026-10-04",
+      "event_id": "E03",
+      "observed_at_utc": "2026-10-04T04:15:00+00:00",
+      "selection_hash": "00469759edc3866e1c02a8454f69244ddda26c9ebba6b201ef7cae2d42efe9e0",
+      "symbol": "MINA_USDT"
+    },
+    {
+      "asof_close": 0.3101,
+      "bar_open_utc": "2026-10-06T11:45:00+00:00",
+      "controls": [
+        "AIGENSYN_USDT",
+        "NEIROCTO_USDT"
+      ],
+      "event_day_utc": "2026-10-06",
+      "event_id": "E03",
+      "observed_at_utc": "2026-10-06T12:00:00+00:00",
+      "selection_hash": "008cea135fc212eb63d1033770b11083e502411de729b8216602aa725082b025",
+      "symbol": "FRAX_USDT"
+    },
+    {
+      "asof_close": 0.04857,
+      "bar_open_utc": "2026-10-03T14:30:00+00:00",
+      "controls": [
+        "OTC_USDT",
+        "ZC_USDT"
+      ],
+      "event_day_utc": "2026-10-03",
+      "event_id": "E03",
+      "observed_at_utc": "2026-10-03T14:45:00+00:00",
+      "selection_hash": "00c4433429f03e14517dfd82ab2d57c13c746269a5e46bf85bb90cc5bdeb76d8",
+      "symbol": "MASKSOL_USDT"
+    },
+    {
+      "asof_close": 0.01287,
+      "bar_open_utc": "2026-10-04T01:00:00+00:00",
+      "controls": [
+        "ORBIO_USDT",
+        "LYN_USDT"
+      ],
+      "event_day_utc": "2026-10-04",
+      "event_id": "E04",
+      "observed_at_utc": "2026-10-04T01:15:00+00:00",
+      "selection_hash": "0052f0b62b0f56f154475f10ac40601e1b76471f31ccf1739faaec2a91776be9",
+      "symbol": "BASECAT_USDT"
+    },
+    {
+      "asof_close": 0.004585,
+      "bar_open_utc": "2026-10-09T13:15:00+00:00",
+      "controls": [
+        "ZZZ_USDT",
+        "GP_USDT"
+      ],
+      "event_day_utc": "2026-10-09",
+      "event_id": "E04",
+      "observed_at_utc": "2026-10-09T13:30:00+00:00",
+      "selection_hash": "00d7628b8782de5d98bf289f3273a7fc8f1703419b6d8e99d128a42d6eb407c3",
+      "symbol": "FONE_USDT"
+    },
+    {
+      "asof_close": 0.029288,
+      "bar_open_utc": "2026-10-08T12:30:00+00:00",
+      "controls": [
+        "PONS_USDT",
+        "W_USDT"
+      ],
+      "event_day_utc": "2026-10-08",
+      "event_id": "E04",
+      "observed_at_utc": "2026-10-08T12:45:00+00:00",
+      "selection_hash": "01ba689f8e8466099ec8263880f877b4b436a2bea29bd9095ebffde070471ea3",
+      "symbol": "AKE_USDT"
+    },
+    {
+      "asof_close": 0.006482,
+      "bar_open_utc": "2026-09-30T18:00:00+00:00",
+      "controls": [
+        "RHEA_USDT",
+        "ZCAT_USDT"
+      ],
+      "event_day_utc": "2026-09-30",
+      "event_id": "E04",
+      "observed_at_utc": "2026-09-30T18:15:00+00:00",
+      "selection_hash": "0364aebbae27ea49616a6a5229c04922dba3819ec59c01104bee45c3bde490c4",
+      "symbol": "FONE_USDT"
+    },
+    {
+      "asof_close": 3.152,
+      "bar_open_utc": "2026-10-07T00:45:00+00:00",
+      "controls": [
+        "MVLL_USDT",
+        "US_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E04",
+      "observed_at_utc": "2026-10-07T01:00:00+00:00",
+      "selection_hash": "041d1403ddc8177778d79f7aedaaab7ad813a2bc87b6df74337fec3b47f7ef9a",
+      "symbol": "ORCA_USDT"
+    },
+    {
+      "asof_close": 0.031725,
+      "bar_open_utc": "2026-10-01T18:00:00+00:00",
+      "controls": [
+        "SI_USDT",
+        "BATON_USDT"
+      ],
+      "event_day_utc": "2026-10-01",
+      "event_id": "E04",
+      "observed_at_utc": "2026-10-01T18:15:00+00:00",
+      "selection_hash": "04f5a44ec23300578912ca0fa44d259eb5298680b1a1b0ec433139927911025d",
+      "symbol": "US_USDT"
+    },
+    {
+      "asof_close": 0.01063,
+      "bar_open_utc": "2026-10-09T18:00:00+00:00",
+      "controls": [
+        "EACC_USDT",
+        "OTC_USDT"
+      ],
+      "event_day_utc": "2026-10-09",
+      "event_id": "E05",
+      "observed_at_utc": "2026-10-09T18:15:00+00:00",
+      "selection_hash": "0001e83875e22208a806e66ad9fd1044e90ac56f3b9a26a795386c24062738f0",
+      "symbol": "ZC_USDT"
+    },
+    {
+      "asof_close": 0.03437,
+      "bar_open_utc": "2026-10-01T20:00:00+00:00",
+      "controls": [
+        "IN_USDT",
+        "IGV_USDT"
+      ],
+      "event_day_utc": "2026-10-01",
+      "event_id": "E05",
+      "observed_at_utc": "2026-10-01T20:15:00+00:00",
+      "selection_hash": "000441dcbbed76556055f34f774ede3adc9c9b37d986a9c765efd9cda3fbac3c",
+      "symbol": "GUA_USDT"
+    },
+    {
+      "asof_close": 0.0704,
+      "bar_open_utc": "2026-10-07T12:00:00+00:00",
+      "controls": [
+        "TRB_USDT",
+        "RAY_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E05",
+      "observed_at_utc": "2026-10-07T12:15:00+00:00",
+      "selection_hash": "00066ce7e83709b4ff23479065cc21a60aad0e78c3adb365f491b4b5c0aec486",
+      "symbol": "SAND_USDT"
+    },
+    {
+      "asof_close": 0.05769,
+      "bar_open_utc": "2026-10-03T02:45:00+00:00",
+      "controls": [
+        "HEI_USDT",
+        "ARPA_USDT"
+      ],
+      "event_day_utc": "2026-10-03",
+      "event_id": "E05",
+      "observed_at_utc": "2026-10-03T03:00:00+00:00",
+      "selection_hash": "0010a84be6973abc3b9f49e940eff2d147db6e037601aa15b0b9e0b410663aa7",
+      "symbol": "JELLYJELLY_USDT"
+    },
+    {
+      "asof_close": 24.03,
+      "bar_open_utc": "2026-10-06T01:45:00+00:00",
+      "controls": [
+        "XLK_USDT",
+        "XBI_USDT"
+      ],
+      "event_day_utc": "2026-10-06",
+      "event_id": "E05",
+      "observed_at_utc": "2026-10-06T02:00:00+00:00",
+      "selection_hash": "001c09e8852b228298ce1219db62c579f68127f081784d216aa117b7961771ae",
+      "symbol": "HK1810_USDT"
+    },
+    {
+      "asof_close": 0.1235,
+      "bar_open_utc": "2026-10-02T19:00:00+00:00",
+      "controls": [
+        "DYM_USDT",
+        "ACH_USDT"
+      ],
+      "event_day_utc": "2026-10-02",
+      "event_id": "E05",
+      "observed_at_utc": "2026-10-02T19:15:00+00:00",
+      "selection_hash": "0039655c0de64e9f66aac70a19da66f11be4126bba7341fe785b8f57792391c3",
+      "symbol": "AVNT_USDT"
+    },
+    {
+      "asof_close": 0.8388,
+      "bar_open_utc": "2026-10-01T05:15:00+00:00",
+      "controls": [
+        "S_USDT",
+        "SYN_USDT"
+      ],
+      "event_day_utc": "2026-10-01",
+      "event_id": "E06",
+      "observed_at_utc": "2026-10-01T05:30:00+00:00",
+      "selection_hash": "0037a65c8ab3f391042df2e9ca2db9799c75c002db25397b5cf96a968fadeaf7",
+      "symbol": "AERO_USDT"
+    },
+    {
+      "asof_close": 0.002304,
+      "bar_open_utc": "2026-09-30T09:30:00+00:00",
+      "controls": [
+        "PYTH_USDT",
+        "JTO_USDT"
+      ],
+      "event_day_utc": "2026-09-30",
+      "event_id": "E06",
+      "observed_at_utc": "2026-09-30T09:45:00+00:00",
+      "selection_hash": "00463ad42c88fd0fc08642e5248af08296be3a149b7518c2dfcbc8a555305fe4",
+      "symbol": "GALA_USDT"
+    },
+    {
+      "asof_close": 0.3563,
+      "bar_open_utc": "2026-10-04T05:15:00+00:00",
+      "controls": [
+        "PIXEL_USDT",
+        "ALICE_USDT"
+      ],
+      "event_day_utc": "2026-10-04",
+      "event_id": "E06",
+      "observed_at_utc": "2026-10-04T05:30:00+00:00",
+      "selection_hash": "00c166673bd28ff8fdf0836d04b108f9327d177427ff5c87fcfdbfe85f178753",
+      "symbol": "COAI_USDT"
+    },
+    {
+      "asof_close": 0.0026,
+      "bar_open_utc": "2026-10-03T03:15:00+00:00",
+      "controls": [
+        "NIGHT_USDT",
+        "BTW_USDT"
+      ],
+      "event_day_utc": "2026-10-03",
+      "event_id": "E06",
+      "observed_at_utc": "2026-10-03T03:30:00+00:00",
+      "selection_hash": "00d1cb51445f4a8070828f0cd0ea76581e3d7db9bad629d842421a7323f54b5d",
+      "symbol": "GALA_USDT"
+    },
+    {
+      "asof_close": 0.03266,
+      "bar_open_utc": "2026-10-07T01:45:00+00:00",
+      "controls": [
+        "SUPER_USDT",
+        "SUSHI_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E06",
+      "observed_at_utc": "2026-10-07T02:00:00+00:00",
+      "selection_hash": "015b46e6fa023aa8844369a3f093d6171d797d4d8b56761448d8c091694cde53",
+      "symbol": "ENJ_USDT"
+    },
+    {
+      "asof_close": 0.135,
+      "bar_open_utc": "2026-10-02T12:30:00+00:00",
+      "controls": [
+        "EDGE_USDT",
+        "BB_USDT"
+      ],
+      "event_day_utc": "2026-10-02",
+      "event_id": "E06",
+      "observed_at_utc": "2026-10-02T12:45:00+00:00",
+      "selection_hash": "015d6708ae8fe498c936d6c76dc1e8a903a5d01b7e1688a956219f3535b97fa9",
+      "symbol": "ARKM_USDT"
+    },
+    {
+      "asof_close": 0.01789,
+      "bar_open_utc": "2026-10-02T10:45:00+00:00",
+      "controls": [
+        "BONER_USDT",
+        "AGT_USDT"
+      ],
+      "event_day_utc": "2026-10-02",
+      "event_id": "E07",
+      "observed_at_utc": "2026-10-02T11:00:00+00:00",
+      "selection_hash": "0009e48219b4757d745213a670cc01aa7cf98d467b469dae7804e94c397133db",
+      "symbol": "MEMEROBINHOOD_USDT"
+    },
+    {
+      "asof_close": 2.1062,
+      "bar_open_utc": "2026-10-04T10:15:00+00:00",
+      "controls": [
+        "USELESS_USDT",
+        "SPX_USDT"
+      ],
+      "event_day_utc": "2026-10-04",
+      "event_id": "E07",
+      "observed_at_utc": "2026-10-04T10:30:00+00:00",
+      "selection_hash": "000a09f3001691498127425736492426e3db503cdecaaa7da8dfd69315f45da1",
+      "symbol": "RAY_USDT"
+    },
+    {
+      "asof_close": 0.08161,
+      "bar_open_utc": "2026-10-08T02:45:00+00:00",
+      "controls": [
+        "ARGUS_USDT",
+        "MASKSOL_USDT"
+      ],
+      "event_day_utc": "2026-10-08",
+      "event_id": "E07",
+      "observed_at_utc": "2026-10-08T03:00:00+00:00",
+      "selection_hash": "000bc58acb648de5ce4a16ac2bcdd5bae7c95ef60e87b43dda060f1049cf067b",
+      "symbol": "RHEA_USDT"
+    },
+    {
+      "asof_close": 0.004731,
+      "bar_open_utc": "2026-10-03T07:30:00+00:00",
+      "controls": [
+        "ESPORTS_USDT",
+        "BROCCOLI_USDT"
+      ],
+      "event_day_utc": "2026-10-03",
+      "event_id": "E07",
+      "observed_at_utc": "2026-10-03T07:45:00+00:00",
+      "selection_hash": "0013c70d6b488e8baa40afbafc10856f533e52b690c0c577b8a284eea2b565ab",
+      "symbol": "XCN_USDT"
+    },
+    {
+      "asof_close": 0.010303,
+      "bar_open_utc": "2026-09-30T18:15:00+00:00",
+      "controls": [
+        "RAVE_USDT",
+        "MSTU_USDT"
+      ],
+      "event_day_utc": "2026-09-30",
+      "event_id": "E07",
+      "observed_at_utc": "2026-09-30T18:30:00+00:00",
+      "selection_hash": "002b13dec743d8138e27353fcfa09de507736b0840db4d67d0dba48f86936f40",
+      "symbol": "GPS_USDT"
+    },
+    {
+      "asof_close": 0.428,
+      "bar_open_utc": "2026-10-07T02:00:00+00:00",
+      "controls": [
+        "SUPER_USDT",
+        "ZRX_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E07",
+      "observed_at_utc": "2026-10-07T02:15:00+00:00",
+      "selection_hash": "003f58f7a8626ac0ff63d8f9b96c9afad1a21fddd97d964d64ca4cd8328cb247",
+      "symbol": "EDGE_USDT"
+    },
+    {
+      "asof_close": 0.03365,
+      "bar_open_utc": "2026-10-03T10:15:00+00:00",
+      "controls": [
+        "PIEVERSE_USDT",
+        "LUNANEW_USDT"
+      ],
+      "event_day_utc": "2026-10-03",
+      "event_id": "E08",
+      "observed_at_utc": "2026-10-03T10:30:00+00:00",
+      "selection_hash": "000c22d6d90d28069db7e23ad90916a1a3e276f7e782e512cdb9c76fd653aed1",
+      "symbol": "XDC_USDT"
+    },
+    {
+      "asof_close": 0.02648,
+      "bar_open_utc": "2026-10-06T06:00:00+00:00",
+      "controls": [
+        "UP_USDT",
+        "ANSEM_USDT"
+      ],
+      "event_day_utc": "2026-10-06",
+      "event_id": "E08",
+      "observed_at_utc": "2026-10-06T06:15:00+00:00",
+      "selection_hash": "004d2f717e16280a7b5a53f1597daef759337ca2ef1a0fe95c42d4c1240fefbe",
+      "symbol": "SCR_USDT"
+    },
+    {
+      "asof_close": 0.2471,
+      "bar_open_utc": "2026-10-02T18:15:00+00:00",
+      "controls": [
+        "NEIROCTO_USDT",
+        "ZBCN_USDT"
+      ],
+      "event_day_utc": "2026-10-02",
+      "event_id": "E08",
+      "observed_at_utc": "2026-10-02T18:30:00+00:00",
+      "selection_hash": "0068906e86db4d0ab209a096c47dddebe5396c0bcac5042134de65aef1b9388b",
+      "symbol": "APEX_USDT"
+    },
+    {
+      "asof_close": 0.02787,
+      "bar_open_utc": "2026-10-09T18:15:00+00:00",
+      "controls": [
+        "RESOLV_USDT",
+        "RLS_USDT"
+      ],
+      "event_day_utc": "2026-10-09",
+      "event_id": "E08",
+      "observed_at_utc": "2026-10-09T18:30:00+00:00",
+      "selection_hash": "0089a51d38d14299fd79b2dfe7a97cfb282502294946bf485406ea75272f1600",
+      "symbol": "HAJIMI_USDT"
+    },
+    {
+      "asof_close": 2.984,
+      "bar_open_utc": "2026-10-07T01:45:00+00:00",
+      "controls": [
+        "BAN_USDT",
+        "EVAA_USDT"
+      ],
+      "event_day_utc": "2026-10-07",
+      "event_id": "E08",
+      "observed_at_utc": "2026-10-07T02:00:00+00:00",
+      "selection_hash": "008b4bacdc70eb61ca46364df26d9366e3718c1f2871261e32235b1061066f83",
+      "symbol": "SSV_USDT"
+    },
+    {
+      "asof_close": 0.1407,
+      "bar_open_utc": "2026-10-05T04:30:00+00:00",
+      "controls": [
+        "WOO_USDT",
+        "BASED_USDT"
+      ],
+      "event_day_utc": "2026-10-05",
+      "event_id": "E08",
+      "observed_at_utc": "2026-10-05T04:45:00+00:00",
+      "selection_hash": "00a621d9b1602fa54402a1968fb6c422cb4e76fbcaa53f4127a190f03410f040",
+      "symbol": "KNC_USDT"
+    }
+  ],
+  "execution_id": "m5-v04-20261013-14d",
+  "families": [
+    "E01",
+    "E02",
+    "E03",
+    "E04",
+    "E05",
+    "E06",
+    "E07",
+    "E08"
+  ],
+  "fixed_sl_tp_configs_pct": [
+    {
+      "sl": 1.0,
+      "tp": 2.0
+    },
+    {
+      "sl": 1.5,
+      "tp": 3.0
+    },
+    {
+      "sl": 2.0,
+      "tp": 4.0
+    }
+  ],
+  "funding_spread_market_impact_unmeasured": true,
+  "historical_exploration_NOT_independent_OOS": true,
+  "historical_study_first_utc": "2026-09-29T15:00:00+00:00",
+  "holdout_exclusive_utc": "2026-10-10T03:00:00+00:00",
+  "horizon_hours": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "max_controls_per_event": 2,
+  "max_events_per_family": 6,
+  "ohlc_fetch_policy": "DISCRETE_CLOSED_15M_CANDLES_THROUGH_DISCOVERY_ONLY",
+  "plan_sha256": "2901dffd40f0c86a62d65e7b319ca9438581b059310472182727a1d567ff0c5e",
+  "research_only": true,
+  "round_trip_cost_stress_bps": [
+    20,
+    40
+  ],
+  "same_bar_sl_tp_resolution": "SL_FIRST_CONSERVATIVE",
+  "selected_family_counts": {
+    "E01": 6,
+    "E02": 6,
+    "E03": 6,
+    "E04": 6,
+    "E05": 6,
+    "E06": 6,
+    "E07": 6,
+    "E08": 6
+  },
+  "selection_rule": "M5_V04_EXECUTION_PATH_EXPLORATORY_FIXED_V1",
+  "source_merged_event_sha256": "148168f29fbf5c7ddde40c3e8d23b60a96b2d4deb068748c80a2572d945f535e",
+  "source_plan_sha256": "d6e51bd4f2881fe5a0e817eb2a7d9ff24380741fbf76fa09c89a01cc2082b914",
+  "source_study_id": "m5-full-20261013-14d",
+  "symbol_count": 124,
+  "symbols": [
+    "2Z_USDT",
+    "ACH_USDT",
+    "AEON1_USDT",
+    "AERO_USDT",
+    "AGI_USDT",
+    "AGT_USDT",
+    "AIGENSYN_USDT",
+    "AKE_USDT",
+    "AKT_USDT",
+    "ALICE_USDT",
+    "ALPINE_USDT",
+    "ANSEM_USDT",
+    "APEX_USDT",
+    "APT_USDT",
+    "ARGUS_USDT",
+    "ARKM_USDT",
+    "ARK_USDT",
+    "ARPA_USDT",
+    "AVNT_USDT",
+    "AWE_USDT",
+    "BAN_USDT",
+    "BASECAT_USDT",
+    "BASED_USDT",
+    "BATON_USDT",
+    "BAT_USDT",
+    "BB_USDT",
+    "BMT_USDT",
+    "BONER_USDT",
+    "BRL_USDT",
+    "BROCCOLI_USDT",
+    "BTW_USDT",
+    "CHF_USDT",
+    "COAI_USDT",
+    "COLLECT_USDT",
+    "CT_USDT",
+    "CVX_USDT",
+    "DELTA_USDT",
+    "DYDX_USDT",
+    "DYM_USDT",
+    "EACC_USDT",
+    "EDGE_USDT",
+    "EIGEN_USDT",
+    "ENJ_USDT",
+    "ESPORTS_USDT",
+    "EVAA_USDT",
+    "FET_USDT",
+    "FILECOIN_USDT",
+    "FLUID_USDT",
+    "FONE_USDT",
+    "FRAX_USDT",
+    "GALA_USDT",
+    "GLM_USDT",
+    "GPS_USDT",
+    "GP_USDT",
+    "GUA_USDT",
+    "HAJIMI_USDT",
+    "HEI_USDT",
+    "HK1810_USDT",
+    "IGV_USDT",
+    "IN_USDT",
+    "IOTA_USDT",
+    "JELLYJELLY_USDT",
+    "JTO_USDT",
+    "KITE_USDT",
+    "KNC_USDT",
+    "LUNANEW_USDT",
+    "LYN_USDT",
+    "MARSCOIN_USDT",
+    "MASKSOL_USDT",
+    "MEMEROBINHOOD_USDT",
+    "MINA_USDT",
+    "MSTU_USDT",
+    "MUSEBOOK_USDT",
+    "MVLL_USDT",
+    "NEIROCTO_USDT",
+    "NIGHT_USDT",
+    "ORBIO_USDT",
+    "ORCA_USDT",
+    "OTC_USDT",
+    "PAID_USDT",
+    "PHA_USDT",
+    "PIEVERSE_USDT",
+    "PIXEL_USDT",
+    "PLUME_USDT",
+    "PONS_USDT",
+    "PUMPFUN_USDT",
+    "PYTH_USDT",
+    "RAVE_USDT",
+    "RAY_USDT",
+    "RESOLV_USDT",
+    "RHEA_USDT",
+    "RLS_USDT",
+    "ROSE_USDT",
+    "RSR_USDT",
+    "SAND_USDT",
+    "SCR_USDT",
+    "SI_USDT",
+    "SNXX_USDT",
+    "SPX_USDT",
+    "SSV_USDT",
+    "SUPER_USDT",
+    "SUSHI_USDT",
+    "SYN_USDT",
+    "S_USDT",
+    "TRB_USDT",
+    "TREAD_USDT",
+    "TRUTH_USDT",
+    "UP_USDT",
+    "USELESS_USDT",
+    "US_USDT",
+    "VET_USDT",
+    "WOO_USDT",
+    "W_USDT",
+    "XBI_USDT",
+    "XCN_USDT",
+    "XDC_USDT",
+    "XDP_USDT",
+    "XLK_USDT",
+    "XPL_USDT",
+    "ZBCN_USDT",
+    "ZCAT_USDT",
+    "ZC_USDT",
+    "ZRX_USDT",
+    "ZZZ_USDT"
+  ],
+  "trades_not_executed": true,
+  "version": "M5_V04_FROZEN_EXPLORATORY_EXECUTION_PLAN_V1"
+}
