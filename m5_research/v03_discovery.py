@@ -44,6 +44,7 @@ def load_asof_closes(study_root, plan):
     """
     cutoff = _utc(plan["holdout_reserved_start_utc"])
     result = {}
+    digests = {}
     symbols_loaded = 0
     for i in range(plan["shards"]):
         from .data import select_universe
@@ -52,7 +53,14 @@ def load_asof_closes(study_root, plan):
             if not path.exists():
                 if not rejection.exists():
                     raise RuntimeError(f"Missing archived symbol {sym}")
+                marker = load(rejection)
+                if marker.get("plan_sha256") != plan["plan_sha256"]:
+                    raise RuntimeError("Rejection marker checksum conflict")
+                digests[sym] = hashlib.sha256(rejection.read_bytes()).hexdigest()
                 continue
+            if rejection.exists():
+                raise RuntimeError("Both accepted and rejected symbol in frozen archive")
+            digests[sym] = hashlib.sha256(path.read_bytes()).hexdigest()
             f = pd.read_csv(path, usecols=["bar_open_utc", "close"])
             stamps = pd.to_datetime(f["bar_open_utc"], utc=True)
             if stamps.duplicated().any() or not stamps.is_monotonic_increasing:
@@ -66,7 +74,7 @@ def load_asof_closes(study_root, plan):
                     lookup[t.value] = price
             result[sym] = lookup
             symbols_loaded += 1
-    return result, symbols_loaded
+    return result, symbols_loaded, digest(digests)
 
 def series_short_returns(symbol, t, market, cutoff):
     """Hypothetical event-close to 1/2/4/8h later CLOSE: not a fill.
@@ -149,7 +157,9 @@ def analyze(study_id, root=ROOT, *, max_event_rows=0):
 
     discovery_cutoff = _utc(plan["holdout_reserved_start_utc"])
     discovery_start = _utc(plan["first_bar_open_utc"])
-    market, loaded = load_asof_closes(study_root, plan)
+    market, loaded, file_fingerprint = load_asof_closes(study_root, plan)
+    if file_fingerprint != manifest.get("all_symbol_file_hash_sha256"):
+        raise RuntimeError("Stored M5 V0.2 feature/rejection files changed since immutable merge")
     if loaded != manifest["accepted_symbols"]:
         raise RuntimeError("As-of closed-price feature coverage does not match frozen merge")
     rows_by_family = {name: [] for name in EVENTS}
