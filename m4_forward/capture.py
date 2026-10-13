@@ -95,6 +95,31 @@ def scan(now=None,symbol_fn=snapshot_universe,fetch_fn=fetch_hourly):
 def main():
     # Fail closed on an absent/late or edited pre-registration lock.
     lock_protocol()
+    now=pd.Timestamp.now(tz="UTC")
+    # Only canonical four-hour slots can enter this preregistered sample.
+    # GitHub workflow_dispatch outside these slots cannot invent new H3 windows.
+    canonical_hour=now.floor("h")
+    if canonical_hour.hour%4!=0:
+        print(json.dumps({"status":"OFF_CADENCE_NO_CAPTURE",
+            "utc_now":now.isoformat(),
+            "next_slot_policy":"00/04/08/12/16/20 UTC only",
+            "historical_backfill":False},indent=2))
+        return 0
+    # A backup trigger must NEVER fetch again after the first valid/invalid
+    # original run has already archived this exact canonical UTC snapshot.
+    batch=canonical_hour.strftime("%Y%m%dT%HZ")
+    previous=Path("state/m4_forward/snapshots")/f"m4-h3-{batch}.json"
+    if previous.exists():
+        old=json.loads(previous.read_text(encoding="utf-8"))
+        if (old.get("batch_id")!=batch or
+            old.get("protocol_hash")!=PROTOCOL_HASH or
+            old.get("hypothesis_id")!=HYPOTHESIS_ID or
+            old.get("outcome_data_present") is not False):
+            raise RuntimeError("Existing canonical H3 snapshot is corrupted")
+        print(json.dumps({"status":"DUPLICATE_CANONICAL_SLOT_SKIPPED",
+                          "batch_id":batch,"original_status":old.get("status"),
+                          "no_second_market_fetch":True},indent=2))
+        return 0
     r=scan()
     Path("output/m4_forward").mkdir(parents=True,exist_ok=True)
     if r["status"]=="PRE_FREEZE_NO_COLLECTION":
