@@ -1,0 +1,386 @@
+{
+  "attrition": {
+    "NO_MATCHED_CONTROLS_ASOF": 19,
+    "PURGED_NEAR_HOLDOUT_8H": 771
+  },
+  "cannot_compute_true_mfe_mae_without_ohlc_high_low": true,
+  "discovery_family_event_counts": {
+    "E01": 5934,
+    "E02": 1715,
+    "E03": 1866,
+    "E04": 274,
+    "E05": 5233,
+    "E06": 479,
+    "E07": 4041,
+    "E08": 3316
+  },
+  "discovery_period_exclusive_end_utc": "2026-10-11T20:00:00+00:00",
+  "discovery_period_start_utc": "2026-10-06T14:00:00+00:00",
+  "eligible_complete_case_and_control_pairs": 22068,
+  "embargo_hours_to_prevent_cross_holdout_label": 8,
+  "families": {
+    "E01": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 671,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.48364,
+          "mean_case_close_to_close_short_pct": 0.188224,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.011776,
+          "mean_control_close_to_close_short_pct": 0.25815,
+          "mean_paired_edge_pp": -0.069926,
+          "positive_day_fraction_paired_edge": 0.16667
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.50534,
+          "mean_case_close_to_close_short_pct": 0.243526,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.043526,
+          "mean_control_close_to_close_short_pct": 0.350583,
+          "mean_paired_edge_pp": -0.107057,
+          "positive_day_fraction_paired_edge": 0.0
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.50964,
+          "mean_case_close_to_close_short_pct": 0.198488,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.001512,
+          "mean_control_close_to_close_short_pct": 0.323176,
+          "mean_paired_edge_pp": -0.124688,
+          "positive_day_fraction_paired_edge": 0.16667
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.50671,
+          "mean_case_close_to_close_short_pct": 0.082062,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.117938,
+          "mean_control_close_to_close_short_pct": 0.199312,
+          "mean_paired_edge_pp": -0.11725,
+          "positive_day_fraction_paired_edge": 0.33333
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 5808
+    },
+    "E02": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 559,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.55495,
+          "mean_case_close_to_close_short_pct": 0.273257,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.073257,
+          "mean_control_close_to_close_short_pct": 0.211844,
+          "mean_paired_edge_pp": 0.061413,
+          "positive_day_fraction_paired_edge": 0.66667
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.60749,
+          "mean_case_close_to_close_short_pct": 0.649107,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.449107,
+          "mean_control_close_to_close_short_pct": 0.653908,
+          "mean_paired_edge_pp": -0.004801,
+          "positive_day_fraction_paired_edge": 0.5
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.50966,
+          "mean_case_close_to_close_short_pct": 0.082478,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.117522,
+          "mean_control_close_to_close_short_pct": 0.213428,
+          "mean_paired_edge_pp": -0.13095,
+          "positive_day_fraction_paired_edge": 0.16667
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.48551,
+          "mean_case_close_to_close_short_pct": -0.403022,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.603022,
+          "mean_control_close_to_close_short_pct": -0.077134,
+          "mean_paired_edge_pp": -0.325888,
+          "positive_day_fraction_paired_edge": 0.5
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 1656
+    },
+    "E03": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 561,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.54067,
+          "mean_case_close_to_close_short_pct": 0.169635,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.030365,
+          "mean_control_close_to_close_short_pct": 0.111051,
+          "mean_paired_edge_pp": 0.058584,
+          "positive_day_fraction_paired_edge": 0.66667
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.54535,
+          "mean_case_close_to_close_short_pct": 0.134996,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.065004,
+          "mean_control_close_to_close_short_pct": 0.179007,
+          "mean_paired_edge_pp": -0.04401,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.56466,
+          "mean_case_close_to_close_short_pct": 0.227042,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.027042,
+          "mean_control_close_to_close_short_pct": 0.162269,
+          "mean_paired_edge_pp": 0.064773,
+          "positive_day_fraction_paired_edge": 0.66667
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.55998,
+          "mean_case_close_to_close_short_pct": 0.151255,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.048745,
+          "mean_control_close_to_close_short_pct": 0.24855,
+          "mean_paired_edge_pp": -0.097295,
+          "positive_day_fraction_paired_edge": 0.33333
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 1709
+    },
+    "E04": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 95,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.49231,
+          "mean_case_close_to_close_short_pct": -0.439131,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.639131,
+          "mean_control_close_to_close_short_pct": 0.003089,
+          "mean_paired_edge_pp": -0.44222,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.47692,
+          "mean_case_close_to_close_short_pct": -0.27577,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.47577,
+          "mean_control_close_to_close_short_pct": 0.004191,
+          "mean_paired_edge_pp": -0.279961,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.49615,
+          "mean_case_close_to_close_short_pct": -0.24955,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.44955,
+          "mean_control_close_to_close_short_pct": -0.033242,
+          "mean_paired_edge_pp": -0.216309,
+          "positive_day_fraction_paired_edge": 0.5
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.56154,
+          "mean_case_close_to_close_short_pct": 0.507852,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.307852,
+          "mean_control_close_to_close_short_pct": 0.249929,
+          "mean_paired_edge_pp": 0.257923,
+          "positive_day_fraction_paired_edge": 0.5
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 260
+    },
+    "E05": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 669,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.46745,
+          "mean_case_close_to_close_short_pct": 0.000991,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.199009,
+          "mean_control_close_to_close_short_pct": 0.069658,
+          "mean_paired_edge_pp": -0.068667,
+          "positive_day_fraction_paired_edge": 0.16667
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.4741,
+          "mean_case_close_to_close_short_pct": 0.00632,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.19368,
+          "mean_control_close_to_close_short_pct": 0.084915,
+          "mean_paired_edge_pp": -0.078595,
+          "positive_day_fraction_paired_edge": 0.16667
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.46276,
+          "mean_case_close_to_close_short_pct": -0.08015,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.28015,
+          "mean_control_close_to_close_short_pct": -0.021931,
+          "mean_paired_edge_pp": -0.058219,
+          "positive_day_fraction_paired_edge": 0.0
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.46295,
+          "mean_case_close_to_close_short_pct": -0.109703,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.309703,
+          "mean_control_close_to_close_short_pct": 0.013461,
+          "mean_paired_edge_pp": -0.123164,
+          "positive_day_fraction_paired_edge": 0.0
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 5115
+    },
+    "E06": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 243,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.58473,
+          "mean_case_close_to_close_short_pct": 0.233538,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.033538,
+          "mean_control_close_to_close_short_pct": 0.150042,
+          "mean_paired_edge_pp": 0.083496,
+          "positive_day_fraction_paired_edge": 0.66667
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.55847,
+          "mean_case_close_to_close_short_pct": 0.021073,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.178927,
+          "mean_control_close_to_close_short_pct": 0.253284,
+          "mean_paired_edge_pp": -0.232211,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.56802,
+          "mean_case_close_to_close_short_pct": 0.096832,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.103168,
+          "mean_control_close_to_close_short_pct": 0.185561,
+          "mean_paired_edge_pp": -0.08873,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.56325,
+          "mean_case_close_to_close_short_pct": -0.168642,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.368642,
+          "mean_control_close_to_close_short_pct": 0.294414,
+          "mean_paired_edge_pp": -0.463056,
+          "positive_day_fraction_paired_edge": 0.33333
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 419
+    },
+    "E07": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 613,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.49546,
+          "mean_case_close_to_close_short_pct": 0.066953,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.133047,
+          "mean_control_close_to_close_short_pct": 0.195296,
+          "mean_paired_edge_pp": -0.128343,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.52037,
+          "mean_case_close_to_close_short_pct": 0.208705,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.008705,
+          "mean_control_close_to_close_short_pct": 0.368622,
+          "mean_paired_edge_pp": -0.159917,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.50636,
+          "mean_case_close_to_close_short_pct": 0.131603,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.068397,
+          "mean_control_close_to_close_short_pct": 0.280924,
+          "mean_paired_edge_pp": -0.149321,
+          "positive_day_fraction_paired_edge": 0.16667
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.50636,
+          "mean_case_close_to_close_short_pct": 0.017418,
+          "mean_case_minus_20bps_cost_sensitivity_pct": -0.182582,
+          "mean_control_close_to_close_short_pct": 0.282465,
+          "mean_paired_edge_pp": -0.265048,
+          "positive_day_fraction_paired_edge": 0.16667
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 3853
+    },
+    "E08": {
+      "day_cluster_uncertainty": "NOT_ESTIMATED_7D_DISCOVERY_IS_TOO_SHORT",
+      "distinct_event_days": 6,
+      "distinct_symbols": 623,
+      "horizon_metrics": {
+        "1h": {
+          "fraction_event_observations_case_short_positive": 0.52094,
+          "mean_case_close_to_close_short_pct": 0.344979,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.144979,
+          "mean_control_close_to_close_short_pct": 0.351434,
+          "mean_paired_edge_pp": -0.006455,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "2h": {
+          "fraction_event_observations_case_short_positive": 0.54926,
+          "mean_case_close_to_close_short_pct": 0.471711,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.271711,
+          "mean_control_close_to_close_short_pct": 0.498319,
+          "mean_paired_edge_pp": -0.026608,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "4h": {
+          "fraction_event_observations_case_short_positive": 0.54557,
+          "mean_case_close_to_close_short_pct": 0.4604,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.2604,
+          "mean_control_close_to_close_short_pct": 0.492071,
+          "mean_paired_edge_pp": -0.03167,
+          "positive_day_fraction_paired_edge": 0.33333
+        },
+        "8h": {
+          "fraction_event_observations_case_short_positive": 0.53202,
+          "mean_case_close_to_close_short_pct": 0.320564,
+          "mean_case_minus_20bps_cost_sensitivity_pct": 0.120564,
+          "mean_control_close_to_close_short_pct": 0.369234,
+          "mean_paired_edge_pp": -0.048669,
+          "positive_day_fraction_paired_edge": 0.33333
+        }
+      },
+      "non_independent_within_coin_and_common_utc": true,
+      "paired_event_observations": 3248
+    }
+  },
+  "fees_funding_slippage_not_observed": true,
+  "historical_days": 7,
+  "holdout_outcome_rows_read": 0,
+  "holdout_performance_disclosed": false,
+  "holdout_warning": "Holdout event counts were inspected in V0.2 aggregate reports. Holdout future returns remain unopened in V0.3; this is NOT a pristine untouched holdout for all research decisions.",
+  "matched_control_source": "M5_V0.2_FROZEN_ALL_ELIGIBLE_SYMBOLS_SAME_UTC",
+  "no_live_promotion": true,
+  "no_orders": true,
+  "no_short_recommendations": true,
+  "outcome_horizons_h": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "recommended_action": "PRESERVE_7D_REPORT_THEN_PREREGISTER_NEW_14_21D_HOLDOUT_BEFORE_CONFIRMATION",
+  "research_only": true,
+  "round_trip_cost_sensitivity_bps": 20,
+  "sample_caveats": [
+    "Only ~5.25 calendar days of event discovery in the seven-day cohort",
+    "Simultaneous crypto coins and consecutive hours violate IID assumptions",
+    "Eight families and four horizons require predeclared multiple testing control",
+    "Close-to-close hypothetical results are NOT executable trade returns",
+    "Survivorship bias: no delisted contracts in the original live catalogue",
+    "Only descriptive means; no p-values, no independent proof, no live promotion"
+  ],
+  "source_kind": "historical CLOSED 15m as-of COIN CLOSES only",
+  "source_merged_event_sha256": "934e9a9bf1a2542014b7e7de4fc58eb12d5c109825552a4f491fdf75366e07db",
+  "source_symbol_count": 680,
+  "status": "DISCOVERY_DESCRIPTIVE_ONLY_NO_EDGE_CONFIRMATION",
+  "study_id": "m5-full-20261013-7d",
+  "study_plan_sha256": "75b6fa4e73912e1ae3012991c58fc29410516d962625bfc5543370015a7481be",
+  "total_discovery_events_before_purge": 22858,
+  "version": "M5_V03_DISCOVERY_CLOSE_ONLY_V1",
+  "virtual_short_reference": "EVENT_CANDLE_CLOSE_NO_EXECUTABLE_FILL"
+}
