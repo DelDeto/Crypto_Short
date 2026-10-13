@@ -137,7 +137,7 @@ def _summarize(rows):
         }
     return summary
 
-def analyze(study_id, root=ROOT, *, max_event_rows=0):
+def analyze(study_id, root=ROOT, *, max_event_rows=0, include_daily=False):
     study_root = Path(root) / checked_id(study_id)
     plan = load(study_root / "plan.json")
     validate_plan(plan)
@@ -257,7 +257,7 @@ def analyze(study_id, root=ROOT, *, max_event_rows=0):
         "discovery_family_event_counts": {key: discovered[key] for key in EVENTS},
         "families": summaries,
         "sample_caveats": [
-            "Only ~5.25 calendar days of event discovery in the seven-day cohort",
+            "The discovery phase uses 75% of this cohort; few independent calendar days even after extension",
             "Simultaneous crypto coins and consecutive hours violate IID assumptions",
             "Eight families and four horizons require predeclared multiple testing control",
             "Close-to-close hypothetical results are NOT executable trade returns",
@@ -267,6 +267,60 @@ def analyze(study_id, root=ROOT, *, max_event_rows=0):
         "recommended_action": "PRESERVE_7D_REPORT_THEN_PREREGISTER_NEW_14_21D_HOLDOUT_BEFORE_CONFIRMATION",
         "no_orders": True, "no_short_recommendations": True, "no_live_promotion": True,
     }
+    if include_daily:
+        # Descriptive daily variation only: simultaneous coin events are NOT
+        # independent, so daily signs and leave-one-day-out are not p-values.
+        daily = {}
+        for fam, rows in rows_by_family.items():
+            days = sorted({row["event_day_utc"] for row in rows})
+            by_day = {}
+            for day in days:
+                rday = [r for r in rows if r["event_day_utc"] == day]
+                by_day[day] = {
+                    "event_count": len(rday),
+                    "unique_symbols": len({r["symbol"] for r in rday}),
+                    "paired_edge_1h_pp": _stats(rday, "paired_edge_1h_pp"),
+                    "paired_edge_2h_pp": _stats(rday, "paired_edge_2h_pp"),
+                    "paired_edge_4h_pp": _stats(rday, "paired_edge_4h_pp"),
+                    "paired_edge_8h_pp": _stats(rday, "paired_edge_8h_pp"),
+                    "case_short_4h_pct": _stats(rday, "case_short_4h_pct"),
+                    "control_short_4h_pct": _stats(rday, "control_short_4h_pct"),
+                }
+            stability = {}
+            for h in HORIZONS_HOURS:
+                key = f"paired_edge_{h}h_pp"
+                positive = sum(by_day[d][key] > 0 for d in days)
+                leave_one_day_out = [
+                    _stats([r for r in rows if r["event_day_utc"] != d], key)
+                    for d in days
+                ] if len(days) >= 2 else []
+                vals = [v for v in leave_one_day_out if v is not None]
+                stability[f"{h}h"] = {
+                    "positive_day_count": positive,
+                    "observed_day_count": len(days),
+                    "fraction_days_positive": round(positive / len(days), 6) if days else None,
+                    "unweighted_mean_daily_edge_pp": (
+                        round(statistics.fmean(by_day[d][key] for d in days), 6)
+                        if days else None),
+                    "leave_one_day_out_min_edge_pp": min(vals) if vals else None,
+                    "leave_one_day_out_max_edge_pp": max(vals) if vals else None,
+                    "all_leave_one_day_out_positive": (
+                        all(v > 0 for v in vals) if vals else None),
+                }
+            daily[fam] = {
+                "calendar_days_with_events": len(days),
+                "by_day": by_day,
+                "descriptive_stability": stability,
+            }
+        report["daily_event_stability"] = daily
+        report["daily_summary_warning"] = (
+            "Non-independent, exploratory daily variation. "
+            "Not an inferential test, not a p-value or proof of Short edge."
+        )
+        report["multiple_testing": (
+            "8 event families x 4 outcome horizons. Do not select a "
+            "winner from positive descriptive means without new untouched evidence.")
+        ]
     return report
 
 def main():
