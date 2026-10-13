@@ -7,7 +7,7 @@ import hashlib,json,math,os
 from datetime import datetime,timezone
 from pathlib import Path
 import pandas as pd
-from m4_research.market import fetch_hourly
+from .provider import fetch_hourly_paced
 from .protocol import (
  HYPOTHESIS_ID,PROTOCOL_HASH,EVALUATE_AFTER_HOURS,HORIZONS_HOURS,
  FREEZE_START_UTC,
@@ -35,7 +35,7 @@ def future_outcomes(frame,entry_open,horizons=HORIZONS_HOURS):
         out[f"mae_{h}h_pct"]=round((hi-anchor)/anchor*100,6)
     return out
 
-def settle_batch(snapshot,now,fetch_fn=fetch_hourly):
+def settle_batch(snapshot,now,fetch_fn=fetch_hourly_paced):
     now=_utc(now)
     if snapshot["protocol_hash"]!=PROTOCOL_HASH or snapshot["hypothesis_id"]!=HYPOTHESIS_ID:
         raise RuntimeError("Attempted outcome settlement on foreign protocol.")
