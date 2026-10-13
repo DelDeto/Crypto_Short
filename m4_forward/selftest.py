@@ -6,6 +6,8 @@ from .features import read_features,match_asof
 from .capture import scan
 from .settle import settle_batch,future_outcomes
 from .first_look import evaluation
+from .health import inventory
+import json
 from .lock import lock_protocol
 from pathlib import Path
 import tempfile
@@ -38,6 +40,41 @@ def outcome_frame(symbol,entry,end):
 
 def main():
     assert len(PROTOCOL_HASH)==64
+    # Reliability-only checks use synthetic immutable snapshots and never
+    # access genuine outcome values or trigger a market-data request.
+    with tempfile.TemporaryDirectory() as td:
+        root=Path(td)
+        prereg={
+            "hypothesis_id":"M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+            "protocol_sha256":PROTOCOL_HASH,
+            "freeze_start_utc":FREEZE_START_UTC,
+            "locked_at_utc":"2026-10-12T10:00:00+00:00",
+        }
+        (root/"H3_protocol_lock.json").write_text(json.dumps(prereg),encoding="utf-8")
+        check=pd.Timestamp("2026-10-13T04:10:00Z")
+        early_health=inventory(check,root)
+        assert early_health["missing_slots_after_grace"]==1
+        assert early_health["status"]=="NO_VALID_SNAPSHOTS"
+        sn_dir=root/"snapshots"
+        sn_dir.mkdir()
+        demo={
+            "batch_id":"20261013T00Z",
+            "hypothesis_id":prereg["hypothesis_id"],
+            "protocol_hash":PROTOCOL_HASH,
+            "signal_time_utc":"2026-10-13T00:00:00+00:00",
+            "virtual_entry_reference_utc":"2026-10-13T01:00:00+00:00",
+            "run_finished_at_utc":"2026-10-13T00:25:00+00:00",
+            "capture_before_virtual_entry":True,
+            "status":"REGISTERED",
+            "outcome_data_present":False,
+            "output_filename":"m4-h3-20261013T00Z.json",
+        }
+        (sn_dir/demo["output_filename"]).write_text(json.dumps(demo),encoding="utf-8")
+        fixed_health=inventory(check,root)
+        assert fixed_health["missing_slots_after_grace"]==0
+        assert fixed_health["valid_captures"]==1
+        assert fixed_health["performance_visible"] is False
+
     with tempfile.TemporaryDirectory() as td:
         p=Path(td)/"lock.json"
         obj=lock_protocol(p,pd.Timestamp("2026-10-12T10:00:00Z").to_pydatetime())
