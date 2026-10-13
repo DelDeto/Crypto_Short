@@ -1,0 +1,97 @@
+name: M5 V0.3 Discovery-Only Historical Close Outcome (No Orders)
+
+on:
+  push:
+    branches: [main, m5-v03-discovery-outcome]
+    paths:
+      - "m5_research/v03_discovery.py"
+      - "m5_research/v03_selftest.py"
+      - ".github/workflows/m5-v03-discovery.yml"
+  workflow_dispatch:
+    inputs:
+      study_id:
+        description: "Frozen previously merged 7-day study ID (default); NO holdout performance"
+        required: true
+        default: m5-full-20261013-7d
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m5-v03-single-discovery-writer
+  cancel-in-progress: false
+
+jobs:
+  causal_tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Test discovery/holdout isolation without network access
+        run: |
+          python -m compileall -q m5_research
+          python -m m5_research.selftest
+          python -m m5_research.v02_selftest
+          python -m m5_research.v03_selftest
+
+  discovery_outcomes:
+    needs: [causal_tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PYTHONUNBUFFERED: "1"
+      M5_STUDY: ${{ inputs.study_id || 'm5-full-20261013-7d' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Discover CLOSE-only future returns (never query holdout outcomes)
+        run: python -m m5_research.v03_discovery --study-id "$M5_STUDY"
+      - name: Commit immutable discovery-only audit, no strategy selection
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "state/m5_research/studies/$M5_STUDY/discovery/v03_close_only_report.json"
+          if git diff --cached --quiet; then
+            echo "No new discovery report"
+          else
+            git commit -m "research(m5): file V0.3 discovery-only outcomes, holdout still sealed [skip ci]"
+            success=false
+            for i in 1 2 3; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then
+                success=true
+                break
+              fi
+            done
+            test "$success" = true || { echo "Failed to persist V0.3 report"; exit 1; }
+          fi
+      - name: Note scientific gate
+        if: always()
+        run: |
+          echo "## M5 V0.3 discovery only" >> "$GITHUB_STEP_SUMMARY"
+          echo "Event-close reference is NOT an executable entry." >> "$GITHUB_STEP_SUMMARY"
+          echo "Last 25% historical holdout outcomes stay unread." >> "$GITHUB_STEP_SUMMARY"
+          echo "No multiple-testing-corrected edge, no MFE/MAE, no fills, no orders." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-V03-Discovery-Only-${{ github.run_id }}
+          path: |
+            state/m5_research/studies/*/discovery/v03_close_only_report.json
+          if-no-files-found: warn
+          retention-days: 30
