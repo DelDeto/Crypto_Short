@@ -75,8 +75,10 @@ def main():
         # Verify a frozen feature modification is detected (no retrospective
         # cherry-picking from a re-written archive).
         from .data import select_universe
-        target = select_universe(p["symbols"], 3, 0)[0]
-        original, _ = _files(root / p["study_id"], 0, target)
+        chosen_shard, target = next((i, sym)
+            for i in range(3)
+            for sym in select_universe(p["symbols"], 3, i))
+        original, _ = _files(root / p["study_id"], chosen_shard, target)
         if original.exists():
             f = pd.read_csv(original)
             f.loc[0, "close"] = 999999.0
