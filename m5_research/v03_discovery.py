@@ -320,7 +320,6 @@ def analyze(study_id, root=ROOT, *, max_event_rows=0, include_daily=False):
         report["multiple_testing"] = (
             "8 event families x 4 outcome horizons. Do not select a "
             "winner from positive descriptive means without new untouched evidence.")
-        ]
     return report
 
 def main():
