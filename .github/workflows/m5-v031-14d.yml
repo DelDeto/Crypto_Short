@@ -1,0 +1,89 @@
+name: M5 V0.3.1 Whole-Market 14D Discovery Stability (No Orders)
+
+on:
+  push:
+    branches: [main, m5-v031-14d-stability]
+    paths:
+      - ".github/workflows/m5-v031-14d.yml"
+      - "m5_research/v031.py"
+      - "m5_research/v031_selftest.py"
+      - "m5_research/v031_kickoff.sh"
+      - "m5_research/v03_discovery.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m5-v02-archive-single-writer
+  cancel-in-progress: false
+
+jobs:
+  offline_validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Validate 14d causal features, holdout embargo, and day-level statistics
+        run: |
+          python -m compileall -q m5_research
+          python -m m5_research.selftest
+          python -m m5_research.v02_selftest
+          python -m m5_research.v03_selftest
+          python -m m5_research.v031_selftest
+
+  fourteen_day_study:
+    needs: [offline_validation]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONUNBUFFERED: "1"
+      M5_STUDY_ID: m5-full-20261013-14d
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Freeze and checkpoint 14d cohort, merge controls, score discovery only
+        run: bash m5_research/v031_kickoff.sh
+      - name: Research progress and caveats
+        if: always()
+        run: |
+          echo "## M5 V0.3.1 14-day market-wide discovery" >> "$GITHUB_STEP_SUMMARY"
+          echo "No orders, no live signals, no untouched holdout outcomes, no MFE/MAE." >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "state/m5_research/studies/$M5_STUDY_ID/discovery/v031_daily_stability.json" ]; then
+            python - <<'PY'
+          import os,json
+          from pathlib import Path
+          p=Path("state/m5_research/studies")/os.environ["M5_STUDY_ID"]/"discovery/v031_daily_stability.json"
+          j=json.loads(p.read_text())
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as fd:
+              for k in ("study_id","status","source_symbol_count","eligible_complete_case_and_control_pairs"):
+                  fd.write(f"- **{k}:** {j.get(k)}\n")
+              fd.write("- **Independence:** 14d overlaps previously inspected 7d; discovery only\n")
+          PY
+          else
+            echo "Study incomplete or failed; resume this SAME run without changing study_id." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: M5-V031-14D-Study-Summary-${{ github.run_id }}
+          path: |
+            state/m5_research/studies/m5-full-20261013-14d/plan.json
+            state/m5_research/studies/m5-full-20261013-14d/merged/research_manifest.json
+            state/m5_research/studies/m5-full-20261013-14d/discovery/v031_daily_stability.json
+            output/m5_research/v02/chunk.json
+          if-no-files-found: warn
+          retention-days: 30
