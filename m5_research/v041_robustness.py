@@ -165,7 +165,6 @@ def analyze(output_root=OUTPUT_ROOT, *, raw_report_override=None):
             raise RuntimeError("Contradictory archived OHLC symbol")
         if accepted.exists():
             filehash[symbol] = hashlib.sha256(accepted.read_bytes()).hexdigest()
-            frames[symbol] = _load_one(accepted)
         elif excluded.exists():
             filehash[symbol] = hashlib.sha256(excluded.read_bytes()).hexdigest()
         else:
@@ -173,6 +172,13 @@ def analyze(output_root=OUTPUT_ROOT, *, raw_report_override=None):
     fingerprint = hashlib.sha256(json.dumps(filehash, sort_keys=True).encode()).hexdigest()
     if fingerprint != raw.get("archived_symbol_sha256"):
         raise RuntimeError("Archived OHLC changed after sealed M5 V0.4 report")
+    # Hash ALL files before interpreting any candle data. This ensures that
+    # a corrupt file is rejected for source integrity, not silently loaded or
+    # misdiagnosed as an unrelated parser failure.
+    for symbol in plan["symbols"]:
+        accepted, _ = _paths(base, symbol)
+        if accepted.exists():
+            frames[symbol] = _load_one(accepted)
 
     # V0.4 per-event source is immutable. Reproduce all 1/2/4/8h case
     # next-open close results, detecting any changed computation or event.
