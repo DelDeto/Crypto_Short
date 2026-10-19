@@ -1,0 +1,98 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261017T04Z",
+  "source_snapshot_sha256": "50ad86570213ff0f32a535f4caca9357d9761f57097954bdc3ab1794e25583a0",
+  "source_signal_time_utc": "2026-10-17T04:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-10-19T21:04:00.620685+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 3,
+  "outcome_rows": [
+    {
+      "symbol": "BASED_USDT",
+      "signal_time_utc": "2026-10-17T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-17T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "FOLKS_USDT",
+        "ICNT_USDT",
+        "UVXY_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 24.438515,
+        "last6_pct": -13.295211,
+        "relative6_pp": -13.155588,
+        "return24_pct": 7.894152,
+        "asof_quote_turnover24_usdt": 661490.38
+      },
+      "reference_entry_open": 0.04857,
+      "short_24h_pct": -6.40313,
+      "mfe_24h_pct": 0.638254,
+      "mae_24h_pct": 11.735639,
+      "short_48h_pct": 0.144122,
+      "mfe_48h_pct": 2.182417,
+      "mae_48h_pct": 11.735639,
+      "matched_control_short_24h_pct": 7.112448,
+      "paired_edge_24h_pp": -13.515578,
+      "matched_control_short_48h_pct": 6.7074,
+      "paired_edge_48h_pp": -6.563278
+    },
+    {
+      "symbol": "BR_USDT",
+      "signal_time_utc": "2026-10-17T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-17T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 20.864356,
+        "last6_pct": -13.519318,
+        "relative6_pp": -13.379696,
+        "return24_pct": 4.524319,
+        "asof_quote_turnover24_usdt": 11460240.65
+      },
+      "reference_entry_open": 0.37404,
+      "short_24h_pct": -12.49599,
+      "mfe_24h_pct": 5.141161,
+      "mae_24h_pct": 43.714576,
+      "short_48h_pct": -25.187146,
+      "mfe_48h_pct": 5.141161,
+      "mae_48h_pct": 45.73575
+    },
+    {
+      "symbol": "SI_USDT",
+      "signal_time_utc": "2026-10-17T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-17T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 1,
+      "matched_control_symbols": [
+        "FOLKS_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 13.409091,
+        "last6_pct": -9.769539,
+        "relative6_pp": -9.629916,
+        "return24_pct": 2.329545,
+        "asof_quote_turnover24_usdt": 2184294.96
+      },
+      "reference_entry_open": 0.01829,
+      "short_24h_pct": 18.151996,
+      "mfe_24h_pct": 23.072717,
+      "mae_24h_pct": 12.793876,
+      "short_48h_pct": 19.628212,
+      "mfe_48h_pct": 27.829415,
+      "mae_48h_pct": 12.793876,
+      "matched_control_short_24h_pct": 11.776775,
+      "paired_edge_24h_pp": 6.375221,
+      "matched_control_short_48h_pct": 5.334428,
+      "paired_edge_48h_pp": 14.293784
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
