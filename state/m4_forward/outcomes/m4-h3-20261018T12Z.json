@@ -1,0 +1,62 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261018T12Z",
+  "source_snapshot_sha256": "2ef5de0a789b689af5550d1144981f6378d010e37eeab8bdaaf2d6912aa781d4",
+  "source_signal_time_utc": "2026-10-18T12:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-10-21T04:58:30.487798+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 2,
+  "outcome_rows": [
+    {
+      "symbol": "CLAUDIA_USDT",
+      "signal_time_utc": "2026-10-18T12:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-18T13:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 78.315074,
+        "last6_pct": -2.658898,
+        "relative6_pp": -3.072113,
+        "return24_pct": 73.573857,
+        "asof_quote_turnover24_usdt": 2994157.96
+      },
+      "reference_entry_open": 0.008687,
+      "short_24h_pct": 20.789686,
+      "mfe_24h_pct": 28.041902,
+      "mae_24h_pct": 6.480949,
+      "short_48h_pct": 36.330148,
+      "mfe_48h_pct": 44.503281,
+      "mae_48h_pct": 6.480949
+    },
+    {
+      "symbol": "Q_USDT",
+      "signal_time_utc": "2026-10-18T12:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-18T13:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 82.113183,
+        "last6_pct": -15.939866,
+        "relative6_pp": -16.35308,
+        "return24_pct": 53.084586,
+        "asof_quote_turnover24_usdt": 12991410.32
+      },
+      "reference_entry_open": 0.110022,
+      "short_24h_pct": -18.217266,
+      "mfe_24h_pct": 6.401447,
+      "mae_24h_pct": 96.434349,
+      "short_48h_pct": -15.315119,
+      "mfe_48h_pct": 6.401447,
+      "mae_48h_pct": 96.434349
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
