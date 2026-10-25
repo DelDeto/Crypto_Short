@@ -1,0 +1,17 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261022T20Z",
+  "source_snapshot_sha256": "89feea1bb4a8e5de9e0a477d05d83953de55ce8939ab10137f86467d1ac3e3a5",
+  "source_signal_time_utc": "2026-10-22T20:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-10-25T13:12:02.106604+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 0,
+  "outcome_rows": [],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
