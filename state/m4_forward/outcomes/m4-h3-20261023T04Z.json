@@ -1,0 +1,76 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261023T04Z",
+  "source_snapshot_sha256": "c653deafee18fd9e78910a4ffec16ac786b9a59f7c34ec1ec05c1cda3230f3e9",
+  "source_signal_time_utc": "2026-10-23T04:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-10-25T19:04:06.132718+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 2,
+  "outcome_rows": [
+    {
+      "symbol": "BTR_USDT",
+      "signal_time_utc": "2026-10-23T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-23T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 1,
+      "matched_control_symbols": [
+        "MAGMA_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 43.013449,
+        "last6_pct": -6.136436,
+        "relative6_pp": -6.644107,
+        "return24_pct": 34.23752,
+        "asof_quote_turnover24_usdt": 12731732.05
+      },
+      "reference_entry_open": 0.06122,
+      "short_24h_pct": 11.287161,
+      "mfe_24h_pct": 15.223783,
+      "mae_24h_pct": 9.866057,
+      "short_48h_pct": 8.934989,
+      "mfe_48h_pct": 15.223783,
+      "mae_48h_pct": 9.866057,
+      "matched_control_short_24h_pct": 40.601727,
+      "paired_edge_24h_pp": -29.314566,
+      "matched_control_short_48h_pct": 25.29512,
+      "paired_edge_48h_pp": -16.360131
+    },
+    {
+      "symbol": "M_USDT",
+      "signal_time_utc": "2026-10-23T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-23T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "GTC_USDT",
+        "BMT_USDT",
+        "AGT_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 14.74359,
+        "last6_pct": -3.02132,
+        "relative6_pp": -3.528991,
+        "return24_pct": 11.276818,
+        "asof_quote_turnover24_usdt": 629935.59
+      },
+      "reference_entry_open": 0.8794,
+      "short_24h_pct": -8.585399,
+      "mfe_24h_pct": 0.386627,
+      "mae_24h_pct": 13.372754,
+      "short_48h_pct": -3.400045,
+      "mfe_48h_pct": 0.386627,
+      "mae_48h_pct": 32.374346,
+      "matched_control_short_24h_pct": -4.626723,
+      "paired_edge_24h_pp": -3.958676,
+      "matched_control_short_48h_pct": 0.449274,
+      "paired_edge_48h_pp": -3.849319
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
