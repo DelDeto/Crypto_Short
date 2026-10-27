@@ -1,0 +1,135 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261025T04Z",
+  "source_snapshot_sha256": "5da6b6b1c5adaa66797f931b0ef498a62405dd8bb6f8bc86232852b943ac4519",
+  "source_signal_time_utc": "2026-10-25T04:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-10-27T20:51:08.952087+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 5,
+  "outcome_rows": [
+    {
+      "symbol": "ANIME_USDT",
+      "signal_time_utc": "2026-10-25T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-25T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 34.502725,
+        "last6_pct": -23.32236,
+        "relative6_pp": -23.873096,
+        "return24_pct": 3.133515,
+        "asof_quote_turnover24_usdt": 662144.27
+      },
+      "reference_entry_open": 0.003103,
+      "short_24h_pct": 9.474702,
+      "mfe_24h_pct": 9.635836,
+      "mae_24h_pct": 1.063487,
+      "short_48h_pct": 9.18466,
+      "mfe_48h_pct": 12.117306,
+      "mae_48h_pct": 1.063487
+    },
+    {
+      "symbol": "APR_USDT",
+      "signal_time_utc": "2026-10-25T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-25T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 48.636009,
+        "last6_pct": -10.356581,
+        "relative6_pp": -10.907317,
+        "return24_pct": 33.242401,
+        "asof_quote_turnover24_usdt": 2167692.6
+      },
+      "reference_entry_open": 0.04562,
+      "short_24h_pct": 23.081982,
+      "mfe_24h_pct": 30.929417,
+      "mae_24h_pct": 20.254274,
+      "short_48h_pct": 25.99737,
+      "mfe_48h_pct": 32.814555,
+      "mae_48h_pct": 20.254274
+    },
+    {
+      "symbol": "CLAUDIA_USDT",
+      "signal_time_utc": "2026-10-25T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-25T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 64.250248,
+        "last6_pct": -5.804111,
+        "relative6_pp": -6.354847,
+        "return24_pct": 54.716981,
+        "asof_quote_turnover24_usdt": 656419.67
+      },
+      "reference_entry_open": 0.003075,
+      "short_24h_pct": -22.146341,
+      "mfe_24h_pct": 13.788618,
+      "mae_24h_pct": 46.341463,
+      "short_48h_pct": -8.650407,
+      "mfe_48h_pct": 13.788618,
+      "mae_48h_pct": 46.341463
+    },
+    {
+      "symbol": "JCT_USDT",
+      "signal_time_utc": "2026-10-25T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-25T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 174.886018,
+        "last6_pct": -9.315826,
+        "relative6_pp": -9.866561,
+        "return24_pct": 149.278116,
+        "asof_quote_turnover24_usdt": 10316369.7
+      },
+      "reference_entry_open": 0.0061,
+      "short_24h_pct": 6.885246,
+      "mfe_24h_pct": 36.213115,
+      "mae_24h_pct": 35.934426,
+      "short_48h_pct": -24.47541,
+      "mfe_48h_pct": 36.213115,
+      "mae_48h_pct": 42.901639
+    },
+    {
+      "symbol": "LIGHT_USDT",
+      "signal_time_utc": "2026-10-25T04:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-25T05:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 2,
+      "matched_control_symbols": [
+        "DNA_USDT",
+        "INIT_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 27.418655,
+        "last6_pct": -3.541028,
+        "relative6_pp": -4.091764,
+        "return24_pct": 22.906725,
+        "asof_quote_turnover24_usdt": 1294105.47
+      },
+      "reference_entry_open": 0.3104,
+      "short_24h_pct": 20.811856,
+      "mfe_24h_pct": 40.399485,
+      "mae_24h_pct": 5.637887,
+      "short_48h_pct": 12.048969,
+      "mfe_48h_pct": 40.399485,
+      "mae_48h_pct": 5.637887,
+      "matched_control_short_24h_pct": 9.930425,
+      "paired_edge_24h_pp": 10.881431,
+      "matched_control_short_48h_pct": 4.520802,
+      "paired_edge_48h_pp": 7.528167
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
