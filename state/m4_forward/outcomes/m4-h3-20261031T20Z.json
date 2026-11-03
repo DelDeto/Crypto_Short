@@ -1,0 +1,220 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261031T20Z",
+  "source_snapshot_sha256": "ac68b7cea713b640f249d850c1f5577120da013ff61f7d418d20cf13f2f2e3d5",
+  "source_signal_time_utc": "2026-10-31T20:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-11-03T11:56:31.960605+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 7,
+  "outcome_rows": [
+    {
+      "symbol": "AIOT_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "ESPORTS_USDT",
+        "MAGMA_USDT",
+        "UAI_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 24.985915,
+        "last6_pct": -4.856885,
+        "relative6_pp": -4.937812,
+        "return24_pct": 18.915493,
+        "asof_quote_turnover24_usdt": 914065.24
+      },
+      "reference_entry_open": 0.08506,
+      "short_24h_pct": -2.327769,
+      "mfe_24h_pct": 1.187397,
+      "mae_24h_pct": 11.333177,
+      "short_48h_pct": -3.209499,
+      "mfe_48h_pct": 7.72396,
+      "mae_48h_pct": 11.333177,
+      "matched_control_short_24h_pct": -24.101554,
+      "paired_edge_24h_pp": 21.773785,
+      "matched_control_short_48h_pct": 3.220129,
+      "paired_edge_48h_pp": -6.429628
+    },
+    {
+      "symbol": "BLESS_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "EVAA_USDT",
+        "ESPORTS_USDT",
+        "UAI_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 17.153846,
+        "last6_pct": -7.110027,
+        "relative6_pp": -7.190954,
+        "return24_pct": 8.824176,
+        "asof_quote_turnover24_usdt": 7991338.64
+      },
+      "reference_entry_open": 0.009582,
+      "short_24h_pct": -1.179295,
+      "mfe_24h_pct": 6.157378,
+      "mae_24h_pct": 6.835734,
+      "short_48h_pct": 6.981841,
+      "mfe_48h_pct": 8.578585,
+      "mae_48h_pct": 10.467543,
+      "matched_control_short_24h_pct": -17.434188,
+      "paired_edge_24h_pp": 16.254893,
+      "matched_control_short_48h_pct": 8.954309,
+      "paired_edge_48h_pp": -1.972468
+    },
+    {
+      "symbol": "B_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "UAI_USDT",
+        "STX_USDT",
+        "MAGMA_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 11.835334,
+        "last6_pct": -3.374233,
+        "relative6_pp": -3.45516,
+        "return24_pct": 8.06175,
+        "asof_quote_turnover24_usdt": 1815280.71
+      },
+      "reference_entry_open": 0.1284,
+      "short_24h_pct": 0.233645,
+      "mfe_24h_pct": 1.869159,
+      "mae_24h_pct": 1.323988,
+      "short_48h_pct": 5.140187,
+      "mfe_48h_pct": 5.996885,
+      "mae_48h_pct": 1.323988,
+      "matched_control_short_24h_pct": 12.665468,
+      "paired_edge_24h_pp": -12.431823,
+      "matched_control_short_48h_pct": 16.23349,
+      "paired_edge_48h_pp": -11.093303
+    },
+    {
+      "symbol": "COW_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "ESPORTS_USDT",
+        "EVAA_USDT",
+        "MAGMA_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 22.942207,
+        "last6_pct": -9.188034,
+        "relative6_pp": -9.268961,
+        "return24_pct": 11.646235,
+        "asof_quote_turnover24_usdt": 1217326.7
+      },
+      "reference_entry_open": 0.1269,
+      "short_24h_pct": 10.953507,
+      "mfe_24h_pct": 13.081166,
+      "mae_24h_pct": 0.315209,
+      "short_48h_pct": 8.274232,
+      "mfe_48h_pct": 13.081166,
+      "mae_48h_pct": 0.315209,
+      "matched_control_short_24h_pct": -35.608453,
+      "paired_edge_24h_pp": 46.56196,
+      "matched_control_short_48h_pct": -16.225608,
+      "paired_edge_48h_pp": 24.49984
+    },
+    {
+      "symbol": "LSK_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 39.091249,
+        "last6_pct": -18.301158,
+        "relative6_pp": -18.382085,
+        "return24_pct": 13.635939,
+        "asof_quote_turnover24_usdt": 26203927.63
+      },
+      "reference_entry_open": 0.24373,
+      "short_24h_pct": 16.046445,
+      "mfe_24h_pct": 17.872236,
+      "mae_24h_pct": 4.14393,
+      "short_48h_pct": 27.370451,
+      "mfe_48h_pct": 27.559184,
+      "mae_48h_pct": 4.14393
+    },
+    {
+      "symbol": "RUNE_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "STX_USDT",
+        "UAI_USDT",
+        "MAGMA_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 10.098638,
+        "last6_pct": -4.337315,
+        "relative6_pp": -4.418242,
+        "return24_pct": 5.323313,
+        "asof_quote_turnover24_usdt": 3087975.43
+      },
+      "reference_entry_open": 0.6785,
+      "short_24h_pct": 15.475313,
+      "mfe_24h_pct": 16.212233,
+      "mae_24h_pct": 0.08843,
+      "short_48h_pct": 19.454679,
+      "mfe_48h_pct": 27.177598,
+      "mae_48h_pct": 0.08843,
+      "matched_control_short_24h_pct": 12.665468,
+      "paired_edge_24h_pp": 2.809845,
+      "matched_control_short_48h_pct": 16.23349,
+      "paired_edge_48h_pp": 3.221189
+    },
+    {
+      "symbol": "WET_USDT",
+      "signal_time_utc": "2026-10-31T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-10-31T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "MAGMA_USDT",
+        "ESPORTS_USDT",
+        "EVAA_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 15.767317,
+        "last6_pct": -4.115702,
+        "relative6_pp": -4.19663,
+        "return24_pct": 11.002679,
+        "asof_quote_turnover24_usdt": 388148.39
+      },
+      "reference_entry_open": 0.05748,
+      "short_24h_pct": 4.227557,
+      "mfe_24h_pct": 5.46277,
+      "mae_24h_pct": 6.767571,
+      "short_48h_pct": 3.496868,
+      "mfe_48h_pct": 8.524704,
+      "mae_48h_pct": 6.767571,
+      "matched_control_short_24h_pct": -35.608453,
+      "paired_edge_24h_pp": 39.83601,
+      "matched_control_short_48h_pct": -16.225608,
+      "paired_edge_48h_pp": 19.722476
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
