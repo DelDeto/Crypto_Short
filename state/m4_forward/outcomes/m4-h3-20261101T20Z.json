@@ -1,0 +1,188 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261101T20Z",
+  "source_snapshot_sha256": "8867751deed973ca51d77489d340d234a3c6af50a1c23971f6a5ee674675758e",
+  "source_signal_time_utc": "2026-11-01T20:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-11-04T12:18:01.872821+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 6,
+  "outcome_rows": [
+    {
+      "symbol": "APR_USDT",
+      "signal_time_utc": "2026-11-01T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-01T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 1,
+      "matched_control_symbols": [
+        "IDOL_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 34.883294,
+        "last6_pct": -18.994413,
+        "relative6_pp": -18.701973,
+        "return24_pct": 9.263003,
+        "asof_quote_turnover24_usdt": 6810381.77
+      },
+      "reference_entry_open": 0.05844,
+      "short_24h_pct": 13.090349,
+      "mfe_24h_pct": 13.877481,
+      "mae_24h_pct": 0.804244,
+      "short_48h_pct": 33.025325,
+      "mfe_48h_pct": 33.418891,
+      "mae_48h_pct": 0.804244,
+      "matched_control_short_24h_pct": 47.384101,
+      "paired_edge_24h_pp": -34.293752,
+      "matched_control_short_48h_pct": 17.22984,
+      "paired_edge_48h_pp": 15.795485
+    },
+    {
+      "symbol": "DNA_USDT",
+      "signal_time_utc": "2026-11-01T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-01T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "NIULAI_USDT",
+        "KIMCHI_USDT",
+        "AIN_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 13.807531,
+        "last6_pct": -4.516807,
+        "relative6_pp": -4.224366,
+        "return24_pct": 8.667065,
+        "asof_quote_turnover24_usdt": 480433.17
+      },
+      "reference_entry_open": 0.1803,
+      "short_24h_pct": -0.610094,
+      "mfe_24h_pct": 3.327787,
+      "mae_24h_pct": 6.100943,
+      "short_48h_pct": 7.154742,
+      "mfe_48h_pct": 10.094287,
+      "mae_48h_pct": 9.206877,
+      "matched_control_short_24h_pct": 16.988734,
+      "paired_edge_24h_pp": -17.598828,
+      "matched_control_short_48h_pct": 17.253123,
+      "paired_edge_48h_pp": -10.098381
+    },
+    {
+      "symbol": "FLOCK_USDT",
+      "signal_time_utc": "2026-11-01T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-01T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "AIN_USDT",
+        "KIMCHI_USDT",
+        "NIULAI_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 18.91516,
+        "last6_pct": -8.725146,
+        "relative6_pp": -8.432706,
+        "return24_pct": 8.539638,
+        "asof_quote_turnover24_usdt": 531129.75
+      },
+      "reference_entry_open": 0.03927,
+      "short_24h_pct": 4.278075,
+      "mfe_24h_pct": 5.958747,
+      "mae_24h_pct": 3.33588,
+      "short_48h_pct": 1.171378,
+      "mfe_48h_pct": 7.868602,
+      "mae_48h_pct": 3.539598,
+      "matched_control_short_24h_pct": 16.988734,
+      "paired_edge_24h_pp": -12.710659,
+      "matched_control_short_48h_pct": 17.253123,
+      "paired_edge_48h_pp": -16.081745
+    },
+    {
+      "symbol": "G_USDT",
+      "signal_time_utc": "2026-11-01T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-01T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "AIN_USDT",
+        "NIULAI_USDT",
+        "KIMCHI_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 16.336336,
+        "last6_pct": -3.846154,
+        "relative6_pp": -3.553713,
+        "return24_pct": 11.861862,
+        "asof_quote_turnover24_usdt": 1794088.3
+      },
+      "reference_entry_open": 0.003711,
+      "short_24h_pct": 9.135004,
+      "mfe_24h_pct": 10.158987,
+      "mae_24h_pct": 1.347346,
+      "short_48h_pct": 13.01536,
+      "mfe_48h_pct": 14.066289,
+      "mae_48h_pct": 1.347346,
+      "matched_control_short_24h_pct": 16.988734,
+      "paired_edge_24h_pp": -7.85373,
+      "matched_control_short_48h_pct": 17.253123,
+      "paired_edge_48h_pp": -4.237763
+    },
+    {
+      "symbol": "INIT_USDT",
+      "signal_time_utc": "2026-11-01T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-01T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "KIMCHI_USDT",
+        "NIULAI_USDT",
+        "AIN_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 12.952132,
+        "last6_pct": -5.494671,
+        "relative6_pp": -5.202231,
+        "return24_pct": 6.745784,
+        "asof_quote_turnover24_usdt": 557705.1
+      },
+      "reference_entry_open": 0.18593,
+      "short_24h_pct": 27.714731,
+      "mfe_24h_pct": 27.768515,
+      "mae_24h_pct": 3.054913,
+      "short_48h_pct": 32.39929,
+      "mfe_48h_pct": 32.657452,
+      "mae_48h_pct": 3.054913,
+      "matched_control_short_24h_pct": 16.988734,
+      "paired_edge_24h_pp": 10.725997,
+      "matched_control_short_48h_pct": 17.253123,
+      "paired_edge_48h_pp": 15.146167
+    },
+    {
+      "symbol": "RT_USDT",
+      "signal_time_utc": "2026-11-01T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-01T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 123.125,
+        "last6_pct": -4.061625,
+        "relative6_pp": -3.769184,
+        "return24_pct": 114.0625,
+        "asof_quote_turnover24_usdt": 1554118.99
+      },
+      "reference_entry_open": 0.007075,
+      "short_24h_pct": 39.491166,
+      "mfe_24h_pct": 40.819788,
+      "mae_24h_pct": 25.823322,
+      "short_48h_pct": 39.533569,
+      "mfe_48h_pct": 46.289753,
+      "mae_48h_pct": 25.823322
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
