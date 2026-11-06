@@ -1,0 +1,114 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261104T00Z",
+  "source_snapshot_sha256": "64a5c1b7500cfb7acc38c7cf79814564d7066bd4974a95a3c46f61147b2ebaec",
+  "source_signal_time_utc": "2026-11-04T00:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-11-06T15:55:55.136873+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 4,
+  "outcome_rows": [
+    {
+      "symbol": "AGT_USDT",
+      "signal_time_utc": "2026-11-04T00:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-04T01:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 54.576167,
+        "last6_pct": -14.087026,
+        "relative6_pp": -13.848834,
+        "return24_pct": 32.800983,
+        "asof_quote_turnover24_usdt": 12644544.62
+      },
+      "reference_entry_open": 0.04359,
+      "short_24h_pct": 29.639826,
+      "mfe_24h_pct": 29.961,
+      "mae_24h_pct": 0.963524,
+      "short_48h_pct": 32.002753,
+      "mfe_48h_pct": 36.545079,
+      "mae_48h_pct": 0.963524
+    },
+    {
+      "symbol": "BATON_USDT",
+      "signal_time_utc": "2026-11-04T00:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-04T01:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 39.328689,
+        "last6_pct": -8.363636,
+        "relative6_pp": -8.125445,
+        "return24_pct": 27.675744,
+        "asof_quote_turnover24_usdt": 368218.97
+      },
+      "reference_entry_open": 0.003815,
+      "short_24h_pct": -35.806029,
+      "mfe_24h_pct": 5.740498,
+      "mae_24h_pct": 40.838794,
+      "short_48h_pct": -39.397117,
+      "mfe_48h_pct": 5.740498,
+      "mae_48h_pct": 88.781127
+    },
+    {
+      "symbol": "CLAUDIA_USDT",
+      "signal_time_utc": "2026-11-04T00:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-04T01:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 51.340616,
+        "last6_pct": -23.589239,
+        "relative6_pp": -23.351047,
+        "return24_pct": 15.640516,
+        "asof_quote_turnover24_usdt": 808592.86
+      },
+      "reference_entry_open": 0.002389,
+      "short_24h_pct": -14.39933,
+      "mfe_24h_pct": 13.687735,
+      "mae_24h_pct": 24.110506,
+      "short_48h_pct": 14.817915,
+      "mfe_48h_pct": 22.059439,
+      "mae_48h_pct": 25.575555
+    },
+    {
+      "symbol": "SAGA_USDT",
+      "signal_time_utc": "2026-11-04T00:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-04T01:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "KMNO_USDT",
+        "BR_USDT",
+        "LIT_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 11.684276,
+        "last6_pct": -4.507513,
+        "relative6_pp": -4.269321,
+        "return24_pct": 6.650093,
+        "asof_quote_turnover24_usdt": 778427.83
+      },
+      "reference_entry_open": 0.01688,
+      "short_24h_pct": -1.658768,
+      "mfe_24h_pct": 3.13981,
+      "mae_24h_pct": 3.672986,
+      "short_48h_pct": 4.739336,
+      "mfe_48h_pct": 8.116114,
+      "mae_48h_pct": 3.672986,
+      "matched_control_short_24h_pct": -3.862506,
+      "paired_edge_24h_pp": 2.203738,
+      "matched_control_short_48h_pct": -2.776181,
+      "paired_edge_48h_pp": 7.515517
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
