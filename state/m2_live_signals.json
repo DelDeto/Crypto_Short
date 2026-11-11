@@ -49,11 +49,60 @@
       "net_r": -1.07148,
       "exit_time": "2026-10-09T16:30:00+00:00",
       "last_outcome_check": "2026-10-09T16:38:21.850603+00:00"
+    },
+    {
+      "signal_id": "XTZ_USDT|2026-11-11T22:00:00+00:00|2026-11-10T20:00:00+00:00",
+      "symbol": "XTZ_USDT",
+      "model": "M2_V4418_LIVE",
+      "tier": "C",
+      "d_gate": true,
+      "e1_ema_gate": false,
+      "e2_anti_bottom_gate": false,
+      "signal_anchor_time": "2026-11-10T16:00:00+00:00",
+      "break_time": "2026-11-10T20:00:00+00:00",
+      "ready_time": "2026-11-11T20:00:00+00:00",
+      "entry_time": "2026-11-11T22:00:00+00:00",
+      "signal_age_minutes": 57.8,
+      "watch_hours": 24.0,
+      "support_level": 0.2466,
+      "support_lower": 0.2461,
+      "support_upper": 0.2574,
+      "atr_at_entry": 0.0029428571,
+      "ema20_distance_atr": 1.3033,
+      "anti_bottom_total": 0.0,
+      "candidate_context_points": 3,
+      "market_r4_pct": -2.51,
+      "market_r24_pct": -4.4369,
+      "relative_4h_pct": 1.2264,
+      "relative_24h_pct": 0.3823,
+      "market_risk_off": 1,
+      "s4_macro_bear": 1,
+      "failed_reclaim_attempts": 2,
+      "retest_attempts": 4,
+      "pivot_high_count": 2,
+      "bars_below": 6,
+      "entry_below_support_atr": 2.4466,
+      "entry": 0.2389,
+      "stop": 0.24405,
+      "tp1": 0.2330142857,
+      "tp2": 0.2300714286,
+      "risk_atr": 1.75,
+      "tp1_atr": 2.0,
+      "tp2_atr": 3.0,
+      "recorded_at": "2026-11-11T23:01:32.395722+00:00",
+      "outcome_status": "OPEN",
+      "outcome_state": "OPEN",
+      "tp1_hit": 0,
+      "tp2_hit": 0,
+      "gross_r": null,
+      "net_r": null,
+      "exit_time": null,
+      "last_outcome_check": null
     }
   ],
   "summary": {
-    "total_signals": 1,
-    "open_signals": 0,
+    "total_signals": 2,
+    "open_signals": 1,
     "closed_signals": 1,
     "by_tier": {
       "A+": {
@@ -90,5 +139,5 @@
       }
     }
   },
-  "updated_at": "2026-11-11T15:35:05.412070+00:00"
+  "updated_at": "2026-11-11T23:01:32.395779+00:00"
 }
