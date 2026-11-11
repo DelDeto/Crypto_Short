@@ -1,0 +1,122 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261108T20Z",
+  "source_snapshot_sha256": "f4156789cdb5b8bd7b842e6e103d6318d89547893f64e8b9e16b6e3a9a5e7f85",
+  "source_signal_time_utc": "2026-11-08T20:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-11-11T16:19:50.382310+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 4,
+  "outcome_rows": [
+    {
+      "symbol": "BMT_USDT",
+      "signal_time_utc": "2026-11-08T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-08T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "SKYAI_USDT",
+        "AIOT_USDT",
+        "HOT_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 13.442768,
+        "last6_pct": -7.978099,
+        "relative6_pp": -7.976518,
+        "return24_pct": 4.392192,
+        "asof_quote_turnover24_usdt": 894103.48
+      },
+      "reference_entry_open": 0.02389,
+      "short_24h_pct": 2.678945,
+      "mfe_24h_pct": 4.311427,
+      "mae_24h_pct": 4.688154,
+      "short_48h_pct": 1.841775,
+      "mfe_48h_pct": 7.660109,
+      "mae_48h_pct": 4.688154,
+      "matched_control_short_24h_pct": -7.426685,
+      "paired_edge_24h_pp": 10.10563,
+      "matched_control_short_48h_pct": -5.572336,
+      "paired_edge_48h_pp": 7.414111
+    },
+    {
+      "symbol": "CLAUDIA_USDT",
+      "signal_time_utc": "2026-11-08T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-08T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 48.942786,
+        "last6_pct": -17.056367,
+        "relative6_pp": -17.054786,
+        "return24_pct": 23.538557,
+        "asof_quote_turnover24_usdt": 14563786.7
+      },
+      "reference_entry_open": 0.00859,
+      "short_24h_pct": 32.526193,
+      "mfe_24h_pct": 35.972061,
+      "mae_24h_pct": 0.0,
+      "short_48h_pct": 33.969732,
+      "mfe_48h_pct": 44.10943,
+      "mae_48h_pct": 0.0
+    },
+    {
+      "symbol": "RITUAL_USDT",
+      "signal_time_utc": "2026-11-08T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-08T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 79.194079,
+        "last6_pct": -10.050482,
+        "relative6_pp": -10.048901,
+        "return24_pct": 61.184211,
+        "asof_quote_turnover24_usdt": 871021.17
+      },
+      "reference_entry_open": 0.04083,
+      "short_24h_pct": -25.887828,
+      "mfe_24h_pct": 6.857703,
+      "mae_24h_pct": 75.704139,
+      "short_48h_pct": 18.564781,
+      "mfe_48h_pct": 23.585599,
+      "mae_48h_pct": 75.704139
+    },
+    {
+      "symbol": "TA_USDT",
+      "signal_time_utc": "2026-11-08T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-08T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "SKYAI_USDT",
+        "AIOT_USDT",
+        "HOT_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 18.238736,
+        "last6_pct": -15.503472,
+        "relative6_pp": -15.501891,
+        "return24_pct": -0.092374,
+        "asof_quote_turnover24_usdt": 613668.44
+      },
+      "reference_entry_open": 0.09511,
+      "short_24h_pct": -6.392598,
+      "mfe_24h_pct": 3.017559,
+      "mae_24h_pct": 13.289875,
+      "short_48h_pct": -11.986121,
+      "mfe_48h_pct": 3.017559,
+      "mae_48h_pct": 13.289875,
+      "matched_control_short_24h_pct": -7.426685,
+      "paired_edge_24h_pp": 1.034087,
+      "matched_control_short_48h_pct": -5.572336,
+      "paired_edge_48h_pp": -6.413785
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
