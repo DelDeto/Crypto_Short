@@ -1,0 +1,47 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261112T16Z",
+  "source_snapshot_sha256": "901db94fff238398061ef1d114f9e6648bb0b8d653016c2dc61d47510cf77c9f",
+  "source_signal_time_utc": "2026-11-12T16:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-11-15T06:33:57.940295+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 1,
+  "outcome_rows": [
+    {
+      "symbol": "ERA_USDT",
+      "signal_time_utc": "2026-11-12T16:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-12T17:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 2,
+      "matched_control_symbols": [
+        "NVD_USDT",
+        "ARX_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 22.671033,
+        "last6_pct": -5.527539,
+        "relative6_pp": -3.098365,
+        "return24_pct": 15.890344,
+        "asof_quote_turnover24_usdt": 932970.38
+      },
+      "reference_entry_open": 0.08951,
+      "short_24h_pct": 16.210479,
+      "mfe_24h_pct": 17.294157,
+      "mae_24h_pct": 1.809854,
+      "short_48h_pct": 17.718691,
+      "mfe_48h_pct": 19.416825,
+      "mae_48h_pct": 1.809854,
+      "matched_control_short_24h_pct": -6.25443,
+      "paired_edge_24h_pp": 22.464908,
+      "matched_control_short_48h_pct": -5.639587,
+      "paired_edge_48h_pp": 23.358277
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
