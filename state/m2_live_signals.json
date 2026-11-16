@@ -98,11 +98,60 @@
       "net_r": 1.36363,
       "exit_time": "2026-11-12T13:15:00+00:00",
       "last_outcome_check": "2026-11-12T21:07:41.385053+00:00"
+    },
+    {
+      "signal_id": "PORTAL_USDT|2026-11-16T02:00:00+00:00|2026-11-14T20:00:00+00:00",
+      "symbol": "PORTAL_USDT",
+      "model": "M2_V4418_LIVE",
+      "tier": "C",
+      "d_gate": true,
+      "e1_ema_gate": false,
+      "e2_anti_bottom_gate": false,
+      "signal_anchor_time": "2026-11-14T16:00:00+00:00",
+      "break_time": "2026-11-14T20:00:00+00:00",
+      "ready_time": "2026-11-16T00:00:00+00:00",
+      "entry_time": "2026-11-16T02:00:00+00:00",
+      "signal_age_minutes": 58.1,
+      "watch_hours": 28.0,
+      "support_level": 0.0119433333,
+      "support_lower": 0.01191,
+      "support_upper": 0.01261,
+      "atr_at_entry": 0.0001757143,
+      "ema20_distance_atr": 1.1381,
+      "anti_bottom_total": 6.0,
+      "candidate_context_points": 4,
+      "market_r4_pct": -2.9483,
+      "market_r24_pct": -4.7116,
+      "relative_4h_pct": 2.0467,
+      "relative_24h_pct": 1.3543,
+      "market_risk_off": 1,
+      "s4_macro_bear": 1,
+      "failed_reclaim_attempts": 2,
+      "retest_attempts": 6,
+      "pivot_high_count": 2,
+      "bars_below": 5,
+      "entry_below_support_atr": 1.82114,
+      "entry": 0.01159,
+      "stop": 0.0118975,
+      "tp1": 0.0112385714,
+      "tp2": 0.0110628571,
+      "risk_atr": 1.75,
+      "tp1_atr": 2.0,
+      "tp2_atr": 3.0,
+      "recorded_at": "2026-11-16T03:01:25.643591+00:00",
+      "outcome_status": "OPEN",
+      "outcome_state": "OPEN",
+      "tp1_hit": 0,
+      "tp2_hit": 0,
+      "gross_r": null,
+      "net_r": null,
+      "exit_time": null,
+      "last_outcome_check": null
     }
   ],
   "summary": {
-    "total_signals": 2,
-    "open_signals": 0,
+    "total_signals": 3,
+    "open_signals": 1,
     "closed_signals": 2,
     "by_tier": {
       "A+": {
@@ -139,5 +188,5 @@
       }
     }
   },
-  "updated_at": "2026-11-15T23:08:09.169026+00:00"
+  "updated_at": "2026-11-16T03:01:25.643640+00:00"
 }
