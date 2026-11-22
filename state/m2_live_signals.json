@@ -147,11 +147,60 @@
       "net_r": 0.51866,
       "exit_time": "2026-11-16T16:00:00+00:00",
       "last_outcome_check": "2026-11-16T22:31:49.162896+00:00"
+    },
+    {
+      "signal_id": "SNX_USDT|2026-11-22T22:00:00+00:00|2026-11-21T04:00:00+00:00",
+      "symbol": "SNX_USDT",
+      "model": "M2_V4418_LIVE",
+      "tier": "A+",
+      "d_gate": true,
+      "e1_ema_gate": true,
+      "e2_anti_bottom_gate": true,
+      "signal_anchor_time": "2026-11-20T20:00:00+00:00",
+      "break_time": "2026-11-21T04:00:00+00:00",
+      "ready_time": "2026-11-22T20:00:00+00:00",
+      "entry_time": "2026-11-22T22:00:00+00:00",
+      "signal_age_minutes": 42.9,
+      "watch_hours": 40.0,
+      "support_level": 0.145,
+      "support_lower": 0.1449,
+      "support_upper": 0.1481,
+      "atr_at_entry": 0.0032142857,
+      "ema20_distance_atr": 2.7972,
+      "anti_bottom_total": 21.0,
+      "candidate_context_points": 4,
+      "market_r4_pct": -2.1944,
+      "market_r24_pct": -7.6565,
+      "relative_4h_pct": 1.1052,
+      "relative_24h_pct": -4.7606,
+      "market_risk_off": 1,
+      "s4_macro_bear": 1,
+      "failed_reclaim_attempts": 4,
+      "retest_attempts": 9,
+      "pivot_high_count": 2,
+      "bars_below": 7,
+      "entry_below_support_atr": 0.96444,
+      "entry": 0.1418,
+      "stop": 0.147425,
+      "tp1": 0.1353714286,
+      "tp2": 0.1321571429,
+      "risk_atr": 1.75,
+      "tp1_atr": 2.0,
+      "tp2_atr": 3.0,
+      "recorded_at": "2026-11-22T22:46:17.383784+00:00",
+      "outcome_status": "OPEN",
+      "outcome_state": "OPEN",
+      "tp1_hit": 0,
+      "tp2_hit": 0,
+      "gross_r": null,
+      "net_r": null,
+      "exit_time": null,
+      "last_outcome_check": null
     }
   ],
   "summary": {
-    "total_signals": 3,
-    "open_signals": 0,
+    "total_signals": 4,
+    "open_signals": 1,
     "closed_signals": 3,
     "by_tier": {
       "A+": {
@@ -188,5 +237,5 @@
       }
     }
   },
-  "updated_at": "2026-11-22T16:37:22.699435+00:00"
+  "updated_at": "2026-11-22T22:46:17.383833+00:00"
 }
