@@ -1,0 +1,185 @@
+{
+  "protocol_hash": "c8f02e52a40d66cc4d08031edda7847fcf899f4a790e2ddac7c62d445702e892",
+  "hypothesis_id": "M4_H3_RELATIVE_WEAKNESS_MOMENTUM_EXHAUSTION_V1",
+  "source_batch_id": "20261123T20Z",
+  "source_snapshot_sha256": "097ee433573488857b3795f8fa5709da08fe0fc8bcb058b3a690d4a6c10d1e72",
+  "source_signal_time_utc": "2026-11-23T20:00:00+00:00",
+  "capture_finished_before_entry": true,
+  "settled_at_utc": "2026-11-26T09:04:42.171314+00:00",
+  "outcome_status": "COMPLETE",
+  "outcome_count": 6,
+  "outcome_rows": [
+    {
+      "symbol": "ARIA_USDT",
+      "signal_time_utc": "2026-11-23T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-23T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 1,
+      "matched_control_symbols": [
+        "NVDL_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 40.211599,
+        "last6_pct": -16.151136,
+        "relative6_pp": -12.05457,
+        "return24_pct": 17.565833,
+        "asof_quote_turnover24_usdt": 9180346.35
+      },
+      "reference_entry_open": 0.3082,
+      "short_24h_pct": -0.46074,
+      "mfe_24h_pct": 4.740428,
+      "mae_24h_pct": 12.624919,
+      "short_48h_pct": -8.234912,
+      "mfe_48h_pct": 8.627515,
+      "mae_48h_pct": 12.624919,
+      "matched_control_short_24h_pct": 11.651652,
+      "paired_edge_24h_pp": -12.112392,
+      "matched_control_short_48h_pct": 18.318318,
+      "paired_edge_48h_pp": -26.55323
+    },
+    {
+      "symbol": "BLESS_USDT",
+      "signal_time_utc": "2026-11-23T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-23T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "MUU_USDT",
+        "KORU_USDT",
+        "CYS_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 18.040621,
+        "last6_pct": -24.600202,
+        "relative6_pp": -20.503636,
+        "return24_pct": -10.997611,
+        "asof_quote_turnover24_usdt": 37544804.63
+      },
+      "reference_entry_open": 0.014449,
+      "short_24h_pct": -24.423836,
+      "mfe_24h_pct": 9.765382,
+      "mae_24h_pct": 43.11025,
+      "short_48h_pct": -17.848986,
+      "mfe_48h_pct": 9.765382,
+      "mae_48h_pct": 43.11025,
+      "matched_control_short_24h_pct": 14.255871,
+      "paired_edge_24h_pp": -38.679707,
+      "matched_control_short_48h_pct": 18.598943,
+      "paired_edge_48h_pp": -36.447929
+    },
+    {
+      "symbol": "BULLA_USDT",
+      "signal_time_utc": "2026-11-23T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-23T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 1,
+      "matched_control_symbols": [
+        "ACE_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 25.155428,
+        "last6_pct": -14.940772,
+        "relative6_pp": -10.844206,
+        "return24_pct": 6.456241,
+        "asof_quote_turnover24_usdt": 3099785.29
+      },
+      "reference_entry_open": 0.0223,
+      "short_24h_pct": -8.744395,
+      "mfe_24h_pct": 6.591928,
+      "mae_24h_pct": 16.591928,
+      "short_48h_pct": -48.609865,
+      "mfe_48h_pct": 6.591928,
+      "mae_48h_pct": 57.93722,
+      "matched_control_short_24h_pct": 6.520021,
+      "paired_edge_24h_pp": -15.264416,
+      "matched_control_short_48h_pct": 6.467334,
+      "paired_edge_48h_pp": -55.077199
+    },
+    {
+      "symbol": "EVAA_USDT",
+      "signal_time_utc": "2026-11-23T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-23T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 3,
+      "matched_control_symbols": [
+        "NVDL_USDT",
+        "ELSA_USDT",
+        "ACE_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 32.346504,
+        "last6_pct": -10.58629,
+        "relative6_pp": -6.489724,
+        "return24_pct": 18.33592,
+        "asof_quote_turnover24_usdt": 27056010.09
+      },
+      "reference_entry_open": 3.0397,
+      "short_24h_pct": 29.775965,
+      "mfe_24h_pct": 38.474192,
+      "mae_24h_pct": 0.141461,
+      "short_48h_pct": 10.589861,
+      "mfe_48h_pct": 38.474192,
+      "mae_48h_pct": 1.283021,
+      "matched_control_short_24h_pct": 14.294058,
+      "paired_edge_24h_pp": 15.481907,
+      "matched_control_short_48h_pct": 15.01033,
+      "paired_edge_48h_pp": -4.420469
+    },
+    {
+      "symbol": "PROM_USDT",
+      "signal_time_utc": "2026-11-23T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-23T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 2,
+      "matched_control_symbols": [
+        "ACE_USDT",
+        "NVDL_USDT"
+      ],
+      "h3_capture_features": {
+        "prior18_pct": 26.586103,
+        "last6_pct": -16.979202,
+        "relative6_pp": -12.882636,
+        "return24_pct": 5.092792,
+        "asof_quote_turnover24_usdt": 2810207.45
+      },
+      "reference_entry_open": 5.025,
+      "short_24h_pct": 10.208955,
+      "mfe_24h_pct": 11.223881,
+      "mae_24h_pct": 5.074627,
+      "short_48h_pct": -3.084577,
+      "mfe_48h_pct": 12.616915,
+      "mae_48h_pct": 5.074627,
+      "matched_control_short_24h_pct": 9.085836,
+      "paired_edge_24h_pp": 1.123119,
+      "matched_control_short_48h_pct": 12.392826,
+      "paired_edge_48h_pp": -15.477403
+    },
+    {
+      "symbol": "SI_USDT",
+      "signal_time_utc": "2026-11-23T20:00:00+00:00",
+      "entry_reference_open_utc": "2026-11-23T21:00:00+00:00",
+      "status": "OK",
+      "matched_control_count": 0,
+      "matched_control_symbols": [],
+      "h3_capture_features": {
+        "prior18_pct": 106.473595,
+        "last6_pct": -12.541254,
+        "relative6_pp": -8.444688,
+        "return24_pct": 80.579216,
+        "asof_quote_turnover24_usdt": 3077386.16
+      },
+      "reference_entry_open": 0.00691,
+      "short_24h_pct": 17.785818,
+      "mfe_24h_pct": 24.413893,
+      "mae_24h_pct": 6.960926,
+      "short_48h_pct": 0.998553,
+      "mfe_48h_pct": 35.108538,
+      "mae_48h_pct": 6.960926
+    }
+  ],
+  "market_errors": {},
+  "source_kind": "MEXC_HISTORICAL_1H_NO_REAL_FILL",
+  "research_only": true,
+  "no_short_orders": true,
+  "no_entry_ranking": true
+}
